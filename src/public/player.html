@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Player</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="player.css">
+</head>
+<body class="player-body">
+    <div class="player-container">
+        <!-- Video Player -->
+        <div class="video-wrapper">
+            <div id="videoPlayer" class="video-player">
+                <div id="loadingOverlay" class="loading-overlay">
+                    <div class="loading-content">
+                        <div class="loading-spinner-large"></div>
+                        <p id="loadingText">Loading WebTorrent...</p>
+                        <div id="torrentProgress" class="torrent-progress" style="display: none;">
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <div class="torrent-stats">
+                                <span id="downloadSpeed">0 B/s</span>
+                                <span id="progress">0%</span>
+                                <span id="peers">0 peers</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Element will be inserted here -->
+                
+                <!-- Player Controls Overlay -->
+                <div id="playerControls" class="player-controls" style="display: none;">
+                    <!-- Top Bar -->
+                    <div class="controls-top">
+                        <button id="backBtn" class="control-btn icon-btn">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                            </svg>
+                        </button>
+                        <h2 id="movieTitle" class="video-title">Loading...</h2>
+                        <div class="controls-right">
+                            <button id="settingsBtn" class="control-btn icon-btn">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Center Play Button -->
+                    <div class="controls-center">
+                        <button id="centerPlayBtn" class="center-play-btn">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Bottom Controls -->
+                    <div class="controls-bottom">
+                        <!-- Progress Bar -->
+                        <div class="progress-container">
+                            <input type="range" id="progressBar" class="progress-slider" min="0" max="100" value="0">
+                            <div class="progress-buffer" id="bufferProgress"></div>
+                        </div>
+                        
+                        <!-- Control Bar -->
+                        <div class="control-bar">
+                            <div class="controls-left">
+                                <button id="playPauseBtn" class="control-btn icon-btn">
+                                    <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                    </svg>
+                                </button>
+                                
+                                <button id="skipBackBtn" class="control-btn icon-btn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                                    </svg>
+                                    <span class="skip-time">5</span>
+                                </button>
+                                
+                                <button id="skipForwardBtn" class="control-btn icon-btn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                                    </svg>
+                                    <span class="skip-time">5</span>
+                                </button>
+
+                                <div class="volume-control">
+                                    <button id="volumeBtn" class="control-btn icon-btn">
+                                        <svg id="volumeIcon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                        </svg>
+                                    </button>
+                                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="100">
+                                </div>
+
+                                <div class="time-display">
+                                    <span id="currentTime">0:00</span>
+                                    <span>/</span>
+                                    <span id="duration">0:00</span>
+                                </div>
+                            </div>
+
+                            <div class="controls-right">
+                                <button id="subtitlesBtn" class="control-btn text-btn">
+                                    <span>CC</span>
+                                </button>
+                                
+                                <button id="qualityBtn" class="control-btn text-btn">
+                                    <span>Auto</span>
+                                </button>
+                                
+                                <button id="speedBtn" class="control-btn text-btn">
+                                    <span>1x</span>
+                                </button>
+                                
+                                <button id="fullscreenBtn" class="control-btn icon-btn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Panel -->
+                <div id="settingsPanel" class="settings-panel" style="display: none;">
+                    <div class="settings-content">
+                        <h3>Settings</h3>
+                        
+                        <div class="setting-item">
+                            <label for="skipTimeSelect">Skip Time (seconds):</label>
+                            <select id="skipTimeSelect">
+                                <option value="5" selected>5 seconds</option>
+                                <option value="10">10 seconds</option>
+                                <option value="15">15 seconds</option>
+                                <option value="30">30 seconds</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="autoplayToggle">Autoplay:</label>
+                            <input type="checkbox" id="autoplayToggle" checked>
+                        </div>
+
+                        <div class="setting-item">
+                            <label>Keyboard Shortcuts:</label>
+                            <div class="shortcuts-info">
+                                <span>Space: Play/Pause</span>
+                                <span>←/→: Skip 5s</span>
+                                <span>↑/↓: Volume</span>
+                                <span>F: Fullscreen</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtitles Panel -->
+                <div id="subtitlesPanel" class="subtitles-panel" style="display: none;">
+                    <div class="subtitles-content">
+                        <h3>Subtitles</h3>
+                        <div id="subtitlesList" class="subtitles-list">
+                            <div class="subtitle-item">
+                                <button class="subtitle-btn" data-lang="off">Off</button>
+                            </div>
+                            <div class="subtitle-loading">
+                                <div class="loading-spinner-small"></div>
+                                <span>Searching OpenSubtitles...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie Info -->
+        <div class="movie-info-panel">
+            <div class="movie-details">
+                <h1 id="movieTitleInfo">Loading...</h1>
+                <div class="movie-meta">
+                    <span id="movieYear">N/A</span>
+                    <span>•</span>
+                    <span id="movieGenre">Unknown</span>
+                    <span>•</span>
+                    <span id="movieDuration">--:--</span>
+                </div>
+                <p id="movieDescription">Loading movie information...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script src="player.js"></script>
+</body>
+</html>

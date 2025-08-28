@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix Admin - Movie Management Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E50914'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'/%3E%3C/svg%3E">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'netflix-red': '#E50914',
+                        'netflix-black': '#141414'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        html, body {
+            height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        main {
+            min-height: calc(100vh - 64px);
+            max-height: calc(100vh - 64px);
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        #adminDashboard {
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding-bottom: 40px;
+        }
+
+        #moviesGrid {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        canvas {
+            max-height: 300px !important;
+            width: 100% !important;
+            height: 200px !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .glass-morphism {
+            backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(17, 25, 40, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(229, 9, 20, 0.2);
+        }
+        
+        .movie-card-admin {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .movie-card-admin:hover {
+            transform: translateY(-2px);
+            border-left-color: #E50914;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #E50914;
+            border-radius: 10px;
+        }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .slide-up { animation: slideUp 0.6s ease-out; }
+        .scale-in { animation: scaleIn 0.3s ease-out; }
+        
+        .notification {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .admin-container {
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-container main {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 2rem;
+        }
+
+        /* Create a fallback movie poster */
+        .movie-poster-fallback {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #9CA3AF;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-netflix-black via-gray-900 to-gray-800 text-white min-h-screen">
+    
+    <!-- Loading Screen -->
+    <div id="globalLoading" class="fixed inset-0 z-50 flex items-center justify-center bg-netflix-black">
+        <div class="text-center animate-fade-in">
+            <div class="relative mb-6">
+                <div class="w-20 h-20 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+            <h2 class="text-3xl font-bold text-netflix-red mb-2">StreamFlix Admin</h2>
+            <p class="text-gray-400">Loading dashboard...</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 glass-morphism">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-netflix-red rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-netflix-red">StreamFlix</div>
+                        <span class="text-sm bg-gray-700 px-2 py-1 rounded-full">Admin</span>
+                    </div>
+                </div>
+                
+                <div id="adminInfo" class="flex items-center space-x-4 hidden">
+                    <div class="text-right">
+                        <div class="text-sm font-medium" id="adminUsername">Admin</div>
+                        <div class="text-xs text-gray-400">Administrator</div>
+                    </div>
+                    <div class="relative">
+                        <button id="adminMenuBtn" class="w-10 h-10 bg-gradient-to-r from-netflix-red to-red-600 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                        <div id="adminDropdown" class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 hidden">
+                            <a href="/" class="block px-4 py-2 hover:bg-gray-700 rounded-t-lg">🏠 View Site</a>
+                            <button id="logoutBtn" class="w-full text-left block px-4 py-2 hover:bg-gray-700 rounded-b-lg text-red-400">🚪 Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="admin-container">
+        <main class="pt-16">
+            
+            <!-- Setup Wizard -->
+            <div id="setupWizard" class="max-w-md mx-auto mt-20 p-8 hidden">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-netflix-red rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Welcome to StreamFlix!</h1>
+                    <p class="text-gray-400">Let's set up your administrator account to get started</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-2xl p-6">
+                    <h2 class="text-xl font-semibold mb-4">Create Admin Account</h2>
+                    <form id="adminSetupForm" class="space-y-4">
+                        <div>
+                            <input type="text" id="setupUsername" placeholder="Choose a username" required minlength="3" 
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h4 class="font-medium mb-2 text-sm">Password Requirements:</h4>
+                            <ul class="text-xs text-gray-300 space-y-1">
+                                <li>• At least 6 characters long</li>
+                                <li>• Use a strong password to secure your collection</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <input type="password" id="setupPassword" placeholder="Create a secure password" required minlength="6"
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        
+                        <div>
+                            <input type="password" id="confirmPassword" placeholder="Confirm your password" required minlength="6"
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        
+                        <button type="submit" id="createAdminBtn" 
+                                class="w-full bg-netflix-red hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                            Create Admin Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="max-w-md mx-auto mt-20 p-8 hidden">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-netflix-red rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Admin Login</h1>
+                    <p class="text-gray-400">Sign in to manage your movie collection</p>
+                </div>
+
+                <div class="bg-gray-800 rounded-2xl p-6">
+                    <form id="adminLoginForm" class="space-y-4">
+                        <div>
+                            <input type="text" id="username" placeholder="Username" required
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        
+                        <div>
+                            <input type="password" id="password" placeholder="Password" required
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        
+                        <button type="submit" id="loginBtn"
+                                class="w-full bg-netflix-red hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                            Sign In
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+                
+                <!-- Dashboard Header -->
+                <div class="mb-8 slide-up">
+                    <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
+                    <p class="text-gray-400">Manage your movie streaming platform</p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card rounded-2xl p-6 fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">Total Movies</p>
+                                <p class="text-3xl font-bold text-netflix-red" id="dashboardMovieCount">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-netflix-red bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-netflix-red" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400">Active</span>
+                            <span class="text-gray-400 ml-2">collection</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.1s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">Unique Genres</p>
+                                <p class="text-3xl font-bold text-blue-400" id="dashboardGenreCount">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-400 bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-blue-400">Categories</span>
+                            <span class="text-gray-400 ml-2">available</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.2s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">This Week</p>
+                                <p class="text-3xl font-bold text-green-400" id="dashboardRecentCount">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-400 bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-green-400">New</span>
+                            <span class="text-gray-400 ml-2">additions</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.3s">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">Database</p>
+                                <p class="text-3xl font-bold text-yellow-400">Online</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-400 bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-yellow-400">Connected</span>
+                            <span class="text-gray-400 ml-2">and ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-2xl p-6 scale-in">
+                        <h3 class="text-xl font-semibold mb-4">Movie Additions Over Time</h3>
+                        <canvas id="moviesChart" width="400" height="200"></canvas>
+                    </div>
+                    
+                    <div class="bg-gray-800 rounded-2xl p-6 scale-in" style="animation-delay: 0.1s">
+                        <h3 class="text-xl font-semibold mb-4">Genre Distribution</h3>
+                        <canvas id="genresChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-gray-800 rounded-2xl p-6 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold">Quick Actions</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <button onclick="showAddMovieForm()" class="flex items-center space-x-3 p-4 bg-netflix-red bg-opacity-20 rounded-xl hover:bg-opacity-30 transition-colors">
+                            <svg class="w-6 h-6 text-netflix-red" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            <span class="font-medium">Add Movie</span>
+                        </button>
+                        
+                        <button onclick="normalizeGenres()" class="flex items-center space-x-3 p-4 bg-blue-500 bg-opacity-20 rounded-xl hover:bg-opacity-30 transition-colors">
+                            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <span class="font-medium">Normalize</span>
+                        </button>
+                        
+                        <button onclick="importData()" class="flex items-center space-x-3 p-4 bg-purple-500 bg-opacity-20 rounded-xl hover:bg-opacity-30 transition-colors">
+                            <svg class="w-6 h-6 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                            </svg>
+                            <span class="font-medium">Import</span>
+                        </button>
+                        
+                        <button onclick="exportData()" class="flex items-center space-x-3 p-4 bg-green-500 bg-opacity-20 rounded-xl hover:bg-opacity-30 transition-colors">
+                            <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                            </svg>
+                            <span class="font-medium">Export</span>
+                        </button>
+                        
+                        <button onclick="showUserManagement()" class="flex items-center space-x-3 p-4 bg-purple-500 bg-opacity-20 rounded-xl hover:bg-opacity-30 transition-colors">
+                            <svg class="w-6 h-6 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                            <span class="font-medium">Users</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add Movie Section -->
+                <div id="addMovieSection" class="bg-gray-800 rounded-2xl p-6 mb-8 hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold">Add New Movie</h3>
+                        <button onclick="hideAddMovieForm()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="addMovieForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Title *</label>
+                                <input type="text" id="movieTitle" placeholder="Movie Title" required
+                                       class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Year</label>
+                                    <input type="number" id="movieYear" placeholder="2024" min="1900" max="2030"
+                                           class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Genre</label>
+                                    <input type="text" id="movieGenre" placeholder="Action, Drama"
+                                           class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Poster URL</label>
+                                <input type="url" id="moviePoster" placeholder="https://example.com/poster.jpg"
+                                       class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">IMDB ID</label>
+                                <input type="text" id="movieImdb" placeholder="tt1234567"
+                                       class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                                <textarea id="movieDescription" placeholder="Movie description..." rows="4"
+                                          class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Magnet Link *</label>
+                                <textarea id="movieMagnet" placeholder="magnet:?xt=urn:btih:..." required rows="4"
+                                          class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-4">
+                                <button type="button" onclick="hideAddMovieForm()" 
+                                        class="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" id="addMovieBtn"
+                                        class="px-6 py-3 bg-netflix-red hover:bg-red-700 rounded-lg transition-colors">
+                                    Add Movie
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Movies Management -->
+                <div class="bg-gray-800 rounded-2xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+                        <h3 class="text-xl font-semibold">Manage Movies</h3>
+                        <div class="flex space-x-4">
+                            <div class="relative">
+                                <input type="text" id="searchMovies" placeholder="Search movies..." 
+                                       class="pl-10 pr-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                                <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <button id="refreshMoviesBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Movies Grid -->
+                    <div id="moviesGrid" class="space-y-4">
+                        <!-- Movies will be loaded here -->
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div id="paginationContainer" class="flex justify-center mt-6 hidden">
+                        <div class="flex space-x-2">
+                            <button id="prevPage" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                Previous
+                            </button>
+                            <span id="pageInfo" class="flex items-center px-4 py-2 text-gray-300">Page 1 of 1</span>
+                            <button id="nextPage" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Management Section -->
+                <div id="userManagementSection" class="bg-gray-800 rounded-2xl p-6 mb-8 hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold">User Management</h3>
+                        <button onclick="hideUserManagement()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- User Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="stat-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Users</p>
+                                    <p class="text-2xl font-bold text-netflix-red" id="totalUsers">0</p>
+                                </div>
+                                <div class="w-10 h-10 bg-netflix-red bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-netflix-red" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Active Users</p>
+                                    <p class="text-2xl font-bold text-green-400" id="activeUsers">0</p>
+                                </div>
+                                <div class="w-10 h-10 bg-green-400 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Inactive Users</p>
+                                    <p class="text-2xl font-bold text-yellow-400" id="inactiveUsers">0</p>
+                                </div>
+                                <div class="w-10 h-10 bg-yellow-400 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">With Email</p>
+                                    <p class="text-2xl font-bold text-blue-400" id="usersWithEmail">0</p>
+                                </div>
+                                <div class="w-10 h-10 bg-blue-400 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Add User Form -->
+                    <div class="bg-gray-700 rounded-xl p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-4">Add New User</h4>
+                        <form id="addUserForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Username *</label>
+                                <input type="text" id="newUsername" placeholder="Enter username" required
+                                       class="w-full px-4 py-3 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Password *</label>
+                                <input type="password" id="newPassword" placeholder="Enter password" required
+                                       class="w-full px-4 py-3 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                                <input type="email" id="newEmail" placeholder="Enter email (optional)"
+                                       class="w-full px-4 py-3 bg-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                            </div>
+                            <div class="md:col-span-3">
+                                <button type="submit" id="addUserBtn"
+                                        class="px-6 py-3 bg-netflix-red hover:bg-red-700 rounded-lg transition-colors">
+                                    Add User
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Users List -->
+                    <div class="bg-gray-700 rounded-xl p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-semibold">Manage Users</h4>
+                            <button id="refreshUsersBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div id="usersList" class="space-y-3">
+                            <!-- Users will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Movie Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-semibold mb-4">Edit Movie</h2>
+            <form id="editMovieForm" class="grid md:grid-cols-2 gap-4">
+                <input type="hidden" id="editId">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Title *</label>
+                        <input type="text" id="editTitle" placeholder="Movie Title" required 
+                               class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Year</label>
+                            <input type="number" id="editYear" placeholder="2024" min="1900" max="2030"
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Genre</label>
+                            <input type="text" id="editGenre" placeholder="Action, Drama"
+                                   class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Poster URL</label>
+                        <input type="url" id="editPosterUrl" placeholder="https://example.com/poster.jpg"
+                               class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">IMDB ID</label>
+                        <input type="text" id="editImdbId" placeholder="tt1234567"
+                               class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <textarea id="editDescription" placeholder="Movie description..." rows="4"
+                                  class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Magnet Link *</label>
+                        <textarea id="editMagnet" placeholder="magnet:?xt=urn:btih:..." required rows="4"
+                                  class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red"></textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2 flex gap-3 justify-end">
+                        <button type="button" onclick="closeEditModal()" class="bg-gray-600 px-6 py-2 rounded hover:bg-gray-500">
+                            Cancel
+                        </button>
+                        <button type="submit" id="editMovieBtn" class="bg-netflix-red px-6 py-2 rounded font-semibold hover:bg-red-700">
+                            💾 Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md m-4">
+            <h2 class="text-xl font-semibold mb-4">Edit User</h2>
+            <form id="editUserForm" class="space-y-4">
+                <input type="hidden" id="editUserId">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Username *</label>
+                    <input type="text" id="editUsername" placeholder="Username" required 
+                           class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input type="email" id="editUserEmail" placeholder="Email (optional)"
+                           class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                    <input type="password" id="editUserPassword" placeholder="Leave blank to keep current password"
+                           class="w-full px-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="editUserActive" class="w-4 h-4 text-netflix-red bg-gray-700 border-gray-600 rounded focus:ring-netflix-red">
+                    <label for="editUserActive" class="text-sm font-medium text-gray-300">Active Account</label>
+                </div>
+                
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="adminPanel.closeEditUserModal()" class="bg-gray-600 px-6 py-2 rounded hover:bg-gray-500">
+                        Cancel
+                    </button>
+                    <button type="submit" id="editUserBtn" class="bg-netflix-red px-6 py-2 rounded font-semibold hover:bg-red-700">
+                        💾 Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden Import File Input -->
+    <input type="file" id="importFile" accept="application/json" class="hidden">
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- JavaScript -->
+    <script>
+        class AdminPanel {
+            constructor() {
+                this.authToken = localStorage.getItem('authToken');
+                this.movies = [];
+                this.filteredMovies = [];
+                this.users = [];
+                this.currentPage = 1;
+                this.itemsPerPage = 10;
+                this.totalPages = 1;
+                this.enforceHeightLimits();
+
+                window.addEventListener('resize', () => this.enforceHeightLimits());
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                await this.checkSetupStatus();
+                this.hideGlobalLoading();
+            }
+
+            enforceHeightLimits() {
+                const main = document.querySelector('main');
+                if (main) {
+                    main.style.maxHeight = `calc(100vh - 64px)`;
+                    main.style.overflowY = 'auto';
+                }
+                
+                const dashboard = document.getElementById('adminDashboard');
+                if (dashboard) {
+                    dashboard.style.maxHeight = `calc(100vh - 100px)`;
+                    dashboard.style.overflowY = 'auto';
+                }
+                
+                const moviesGrid = document.getElementById('moviesGrid');
+                if (moviesGrid) {
+                    moviesGrid.style.maxHeight = '400px';
+                    moviesGrid.style.overflowY = 'auto';
+                }
+            }
+            
+            hideGlobalLoading() {
+                setTimeout(() => {
+                    const loading = document.getElementById('globalLoading');
+                    if (loading) {
+                        loading.classList.add('opacity-0');
+                        setTimeout(() => loading.style.display = 'none', 500);
+                    }
+                }, 1500);
+            }
+
+            setupEventListeners() {
+                // Forms
+                document.getElementById('adminSetupForm').addEventListener('submit', this.handleSetup.bind(this));
+                document.getElementById('adminLoginForm').addEventListener('submit', this.handleLogin.bind(this));
+                document.getElementById('addMovieForm').addEventListener('submit', this.handleAddMovie.bind(this));
+                document.getElementById('editMovieForm').addEventListener('submit', this.handleEditMovie.bind(this));
+
+                // Buttons
+                document.getElementById('logoutBtn').addEventListener('click', this.handleLogout.bind(this));
+                document.getElementById('refreshMoviesBtn').addEventListener('click', this.loadMovies.bind(this));
+                document.getElementById('searchMovies').addEventListener('input', this.handleSearchMovies.bind(this));
+
+                // Admin menu
+                document.getElementById('adminMenuBtn').addEventListener('click', this.toggleAdminMenu.bind(this));
+                document.addEventListener('click', this.closeAdminMenu.bind(this));
+
+                // Pagination
+                document.getElementById('prevPage').addEventListener('click', () => this.changePage(this.currentPage - 1));
+                document.getElementById('nextPage').addEventListener('click', () => this.changePage(this.currentPage + 1));
+
+                // Password validation
+                document.getElementById('confirmPassword').addEventListener('input', this.validatePasswordConfirmation.bind(this));
+
+                // Import file handler
+                document.getElementById('importFile').addEventListener('change', this.handleImportFile.bind(this));
+
+                // User management
+                document.getElementById('addUserForm').addEventListener('submit', this.handleAddUser.bind(this));
+                document.getElementById('editUserForm').addEventListener('submit', this.handleEditUser.bind(this));
+                document.getElementById('refreshUsersBtn').addEventListener('click', () => {
+                    this.loadUsers();
+                    this.loadUserStats();
+                });
+
+                // ESC key to close modals
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeEditModal();
+                    }
+                });
+            }
+
+            async checkSetupStatus() {
+                try {
+                    const response = await fetch('/api/auth/admin-exists');
+                    const data = await response.json();
+                    
+                    if (!data.exists) {
+                        this.showSetupWizard();
+                    } else if (this.authToken) {
+                        await this.validateToken();
+                    } else {
+                        this.showLogin();
+                    }
+                } catch (error) {
+                    console.error('Setup check failed:', error);
+                    this.showLogin();
+                }
+            }
+
+            async validateToken() {
+                try {
+                    const response = await fetch('/api/auth/verify', {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById('adminUsername').textContent = data.username;
+                        this.showDashboard();
+                        await this.loadDashboardData();
+                    } else {
+                        localStorage.removeItem('authToken');
+                        this.authToken = null;
+                        this.showLogin();
+                    }
+                } catch (error) {
+                    console.error('Token validation failed:', error);
+                    this.showLogin();
+                }
+            }
+
+            async handleSetup(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('setupUsername').value.trim();
+                const password = document.getElementById('setupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const submitBtn = document.getElementById('createAdminBtn');
+                
+                if (password !== confirmPassword) {
+                    this.showNotification('Passwords do not match!', 'error');
+                    return;
+                }
+                
+                if (username.length < 3) {
+                    this.showNotification('Username must be at least 3 characters long', 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    this.showNotification('Password must be at least 6 characters long', 'error');
+                    return;
+                }
+                
+                submitBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Creating...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/auth/register-admin', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showNotification('Admin account created successfully!', 'success');
+                        setTimeout(() => this.showLogin(), 1500);
+                    } else {
+                        this.showNotification(data.error || 'Failed to create admin account', 'error');
+                    }
+                } catch (error) {
+                    console.error('Setup error:', error);
+                    this.showNotification('Failed to create admin account. Please try again.', 'error');
+                } finally {
+                    submitBtn.innerHTML = 'Create Admin Account';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('loginBtn');
+                
+                loginBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Signing In...';
+                loginBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.authToken = data.token;
+                        localStorage.setItem('authToken', this.authToken);
+                        document.getElementById('adminUsername').textContent = data.username;
+                        
+                        this.showNotification('Login successful!', 'success');
+                        this.showDashboard();
+                        await this.loadDashboardData();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Login failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showNotification('Login failed. Please try again.', 'error');
+                } finally {
+                    loginBtn.innerHTML = 'Sign In';
+                    loginBtn.disabled = false;
+                }
+            }
+
+            async handleAddMovie(e) {
+                e.preventDefault();
+                
+                const movieData = {
+                    title: document.getElementById('movieTitle').value.trim(),
+                    description: document.getElementById('movieDescription').value.trim(),
+                    year: parseInt(document.getElementById('movieYear').value) || null,
+                    genre: document.getElementById('movieGenre').value.trim(),
+                    magnet: document.getElementById('movieMagnet').value.trim(),
+                    poster_url: document.getElementById('moviePoster').value.trim(),
+                    imdb_id: document.getElementById('movieImdb').value.trim()
+                };
+                
+                if (!movieData.title || !movieData.magnet) {
+                    this.showNotification('Title and Magnet Link are required!', 'error');
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('addMovieBtn');
+                submitBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Adding...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/movies', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.authToken}`
+                        },
+                        body: JSON.stringify(movieData)
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('Movie added successfully!', 'success');
+                        document.getElementById('addMovieForm').reset();
+                        this.hideAddMovieForm();
+                        await this.loadMovies();
+                        this.updateDashboardStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to add movie', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding movie:', error);
+                    this.showNotification('Failed to add movie. Please try again.', 'error');
+                } finally {
+                    submitBtn.innerHTML = 'Add Movie';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            async handleEditMovie(e) {
+                e.preventDefault();
+
+                const id = document.getElementById('editId').value;
+                const movieData = {
+                    title: document.getElementById('editTitle').value.trim(),
+                    year: parseInt(document.getElementById('editYear').value) || null,
+                    genre: document.getElementById('editGenre').value.trim(),
+                    poster_url: document.getElementById('editPosterUrl').value.trim(),
+                    imdb_id: document.getElementById('editImdbId').value.trim(),
+                    description: document.getElementById('editDescription').value.trim(),
+                    magnet: document.getElementById('editMagnet').value.trim()
+                };
+
+                const submitBtn = document.getElementById('editMovieBtn');
+                submitBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Saving...';
+                submitBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/movies/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.authToken}`
+                        },
+                        body: JSON.stringify(movieData)
+                    });
+
+                    if (response.ok) {
+                        this.showNotification('Movie updated successfully!', 'success');
+                        this.closeEditModal();
+                        await this.loadMovies();
+                        this.updateDashboardStats();
+                    } else {
+                        const errorText = await response.text();
+                        let errorMsg = 'Failed to update movie';
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            errorMsg = errorData.error || errorData.message || errorMsg;
+                        } catch (e) {
+                            errorMsg = errorText || errorMsg;
+                        }
+                        this.showNotification(`Update failed: ${errorMsg}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Network/Request error:', error);
+                    this.showNotification(`Update failed: ${error.message}`, 'error');
+                } finally {
+                    submitBtn.innerHTML = '💾 Save Changes';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            editMovie(id) {
+                const movie = this.movies.find(m => m.id === id);
+                if (!movie) {
+                    this.showNotification('Movie not found', 'error');
+                    return;
+                }
+
+                // Populate form fields
+                document.getElementById('editId').value = movie.id;
+                document.getElementById('editTitle').value = movie.title || '';
+                document.getElementById('editYear').value = movie.year || '';
+                document.getElementById('editGenre').value = movie.genre || '';
+                document.getElementById('editPosterUrl').value = movie.poster_url || '';
+                document.getElementById('editImdbId').value = movie.imdb_id || '';
+                document.getElementById('editDescription').value = movie.description || '';
+                document.getElementById('editMagnet').value = movie.magnet || '';
+
+                // Show modal
+                document.getElementById('editModal').classList.remove('hidden');
+            }
+
+            closeEditModal() {
+                document.getElementById('editModal').classList.add('hidden');
+            }
+
+            async handleImportFile(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const importedMovies = JSON.parse(text);
+                    
+                    if (!Array.isArray(importedMovies)) {
+                        throw new Error('Invalid file format - must be an array of movies');
+                    }
+
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    this.showNotification(`Importing ${importedMovies.length} movies...`, 'info');
+
+                    for (const movie of importedMovies) {
+                        try {
+                            const response = await fetch('/api/movies', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${this.authToken}`
+                                },
+                                body: JSON.stringify({
+                                    title: movie.title,
+                                    year: movie.year || null,
+                                    genre: movie.genre || '',
+                                    poster_url: movie.poster_url || '',
+                                    description: movie.description || '',
+                                    magnet: movie.magnet,
+                                    imdb_id: movie.imdb_id || ''
+                                })
+                            });
+
+                            if (response.ok) {
+                                successCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        } catch (error) {
+                            errorCount++;
+                        }
+                    }
+
+                    await this.loadMovies();
+                    this.updateDashboardStats();
+                    this.showNotification(`Import completed! ${successCount} movies added, ${errorCount} errors.`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error importing file:', error);
+                    this.showNotification('Failed to import file. Please check the format.', 'error');
+                }
+                
+                e.target.value = '';
+            }
+
+            handleLogout() {
+                if (confirm('Are you sure you want to logout?')) {
+                    localStorage.removeItem('authToken');
+                    this.authToken = null;
+                    this.showNotification('Logged out successfully', 'success');
+                    setTimeout(() => this.showLogin(), 1000);
+                }
+            }
+
+            handleSearchMovies(e) {
+                const query = e.target.value.toLowerCase().trim();
+                this.filteredMovies = this.movies.filter(movie =>
+                    movie.title.toLowerCase().includes(query) ||
+                    (movie.genre && movie.genre.toLowerCase().includes(query)) ||
+                    (movie.description && movie.description.toLowerCase().includes(query))
+                );
+                this.currentPage = 1;
+                this.renderMovies();
+            }
+
+            validatePasswordConfirmation() {
+                const password = document.getElementById('setupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const confirmInput = document.getElementById('confirmPassword');
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    confirmInput.classList.add('ring-red-500');
+                    confirmInput.classList.remove('focus:ring-netflix-red');
+                } else {
+                    confirmInput.classList.remove('ring-red-500');
+                    confirmInput.classList.add('focus:ring-netflix-red');
+                }
+            }
+
+            toggleAdminMenu() {
+                const dropdown = document.getElementById('adminDropdown');
+                dropdown.classList.toggle('hidden');
+            }
+
+            closeAdminMenu(e) {
+                const dropdown = document.getElementById('adminDropdown');
+                const menuBtn = document.getElementById('adminMenuBtn');
+                
+                if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+
+            async loadDashboardData() {
+                await this.loadMovies();
+                this.updateDashboardStats();
+                this.initializeCharts();
+            }
+
+            async loadMovies() {
+                try {
+                    const response = await fetch('/api/movies', {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.movies = data.movies || data || [];
+                        this.filteredMovies = [...this.movies];
+                        this.renderMovies();
+                    } else {
+                        console.error('Failed to load movies:', data.error);
+                        this.movies = [];
+                        this.filteredMovies = [];
+                        this.renderMovies();
+                    }
+                } catch (error) {
+                    console.error('Error loading movies:', error);
+                    this.movies = [];
+                    this.filteredMovies = [];
+                    this.renderMovies();
+                    this.showNotification('Failed to load movies', 'error');
+                }
+            }
+
+            renderMovies() {
+                const container = document.getElementById('moviesGrid');
+                
+                this.totalPages = Math.ceil(this.filteredMovies.length / this.itemsPerPage);
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = Math.min(startIndex + this.itemsPerPage, this.filteredMovies.length);
+                const moviesToShow = this.filteredMovies.slice(startIndex, endIndex);
+                
+                if (moviesToShow.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12">
+                            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h5a1 1 0 011 1v1a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4z"/>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No movies found</h3>
+                            <p class="text-gray-400">Try adjusting your search criteria</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = moviesToShow.map(movie => `
+                        <div class="movie-card-admin bg-gray-700 rounded-xl p-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-18 movie-poster-fallback rounded-lg flex-shrink-0">
+                                    ${movie.poster_url ? 
+                                        `<img src="${movie.poster_url}" alt="${movie.title}" class="w-full h-full object-cover rounded-lg" onerror="this.parentElement.innerHTML='🎬'">` : 
+                                        '🎬'
+                                    }
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="font-semibold text-white truncate">${movie.title}</h4>
+                                    <p class="text-sm text-gray-400">${movie.year || 'N/A'} • ${movie.genre || 'Unknown'}</p>
+                                    <p class="text-xs text-gray-500 mt-1 truncate">${movie.description ? this.truncateText(movie.description, 60) : 'No description'}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <button onclick="adminPanel.viewMovie(${movie.id})" 
+                                        class="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" title="View Movie">
+                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="adminPanel.editMovie(${movie.id})" 
+                                        class="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="Edit Movie">
+                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="adminPanel.deleteMovie(${movie.id}, '${this.escapeHtml(movie.title)}')" 
+                                        class="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="Delete Movie">
+                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                this.updatePagination();
+            }
+
+            updatePagination() {
+                const paginationContainer = document.getElementById('paginationContainer');
+                const pageInfo = document.getElementById('pageInfo');
+                const prevBtn = document.getElementById('prevPage');
+                const nextBtn = document.getElementById('nextPage');
+                
+                if (this.totalPages <= 1) {
+                    paginationContainer.classList.add('hidden');
+                } else {
+                    paginationContainer.classList.remove('hidden');
+                    pageInfo.textContent = `Page ${this.currentPage} of ${this.totalPages}`;
+                    prevBtn.disabled = this.currentPage <= 1;
+                    nextBtn.disabled = this.currentPage >= this.totalPages;
+                }
+            }
+
+            changePage(newPage) {
+                if (newPage >= 1 && newPage <= this.totalPages) {
+                    this.currentPage = newPage;
+                    this.renderMovies();
+                }
+            }
+
+            updateDashboardStats() {
+                if (!Array.isArray(this.movies)) {
+                    this.movies = [];
+                }
+                
+                document.getElementById('dashboardMovieCount').textContent = this.movies.length;
+                
+                const uniqueGenres = new Set();
+                this.movies.forEach(movie => {
+                    if (movie.genre) {
+                        movie.genre.split(',').forEach(g => uniqueGenres.add(g.trim().toLowerCase()));
+                    }
+                });
+                document.getElementById('dashboardGenreCount').textContent = uniqueGenres.size;
+                
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                const recentMovies = this.movies.filter(m => new Date(m.created_at) > oneWeekAgo);
+                document.getElementById('dashboardRecentCount').textContent = recentMovies.length;
+            }
+
+            initializeCharts() {
+                this.createMoviesChart();
+                this.createGenresChart();
+            }
+
+            createMoviesChart() {
+                const ctx = document.getElementById('moviesChart').getContext('2d');
+                ctx.canvas.style.maxHeight = '200px';
+                ctx.canvas.style.height = '200px';
+                
+                const labels = [];
+                const data = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    data.push(Math.floor(Math.random() * 5) + 1);
+                }
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Movies Added',
+                            data: data,
+                            borderColor: '#E50914',
+                            backgroundColor: 'rgba(229, 9, 20, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { color: '#9CA3AF' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { color: '#9CA3AF' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createGenresChart() {
+                const ctx = document.getElementById('genresChart').getContext('2d');
+                ctx.canvas.style.maxHeight = '200px';
+                ctx.canvas.style.height = '200px';
+
+                const genreCounts = {};
+                this.movies.forEach(movie => {
+                    if (movie.genre) {
+                        movie.genre.split(',').forEach(g => {
+                            const genre = g.trim();
+                            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+                        });
+                    }
+                });
+                
+                const sortedGenres = Object.entries(genreCounts)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5);
+                
+                const labels = sortedGenres.map(([genre]) => genre);
+                const data = sortedGenres.map(([,count]) => count);
+                const colors = ['#E50914', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#9CA3AF' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            async deleteMovie(id, title) {
+                if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+                
+                try {
+                    const response = await fetch(`/api/movies/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('Movie deleted successfully!', 'success');
+                        await this.loadMovies();
+                        this.updateDashboardStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to delete movie', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting movie:', error);
+                    this.showNotification('Failed to delete movie', 'error');
+                }
+            }
+
+            viewMovie(id) {
+                window.open(`/?movie=${id}`, '_blank');
+            }
+
+            async normalizeGenres() {
+                if (!confirm('This will normalize all movie genres (e.g., "Kids" → "kids"). Continue?')) return;
+                
+                try {
+                    const response = await fetch('/api/movies/admin/normalize-genres', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.showNotification(data.message, 'success');
+                        await this.loadMovies();
+                        this.updateDashboardStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to normalize genres', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error normalizing genres:', error);
+                    this.showNotification('Failed to normalize genres', 'error');
+                }
+            }
+
+            exportData() {
+                const dataStr = JSON.stringify(this.movies, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `streamflix_movies_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                URL.revokeObjectURL(url);
+                this.showNotification('Data exported successfully!', 'success');
+            }
+
+            // UI State Management
+            showSetupWizard() {
+                this.hideAll();
+                document.getElementById('setupWizard').classList.remove('hidden');
+            }
+
+            showLogin() {
+                this.hideAll();
+                document.getElementById('loginForm').classList.remove('hidden');
+            }
+
+            showDashboard() {
+                this.hideAll();
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                document.getElementById('adminInfo').classList.remove('hidden');
+            }
+
+            hideAll() {
+                document.getElementById('setupWizard').classList.add('hidden');
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('adminInfo').classList.add('hidden');
+                document.getElementById('addMovieSection').classList.add('hidden');
+                document.getElementById('userManagementSection').classList.add('hidden');
+            }
+
+            showAddMovieForm() {
+                document.getElementById('addMovieSection').classList.remove('hidden');
+                document.getElementById('movieTitle').focus();
+            }
+
+            hideAddMovieForm() {
+                document.getElementById('addMovieSection').classList.add('hidden');
+            }
+
+            showUserManagement() {
+                document.getElementById('userManagementSection').classList.remove('hidden');
+                this.loadUsers();
+                this.loadUserStats();
+            }
+
+            hideUserManagement() {
+                document.getElementById('userManagementSection').classList.add('hidden');
+            }
+
+            async loadUsers() {
+                try {
+                    const response = await fetch('/api/users', {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.users = data.users || [];
+                        this.renderUsers(this.users);
+                    } else {
+                        this.showNotification('Failed to load users', 'error');
+                        this.users = [];
+                    }
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                    this.showNotification('Failed to load users', 'error');
+                    this.users = [];
+                }
+            }
+
+            async loadUserStats() {
+                try {
+                    const response = await fetch('/api/users/stats', {
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        const stats = await response.json();
+                        document.getElementById('totalUsers').textContent = stats.total_users;
+                        document.getElementById('activeUsers').textContent = stats.active_users;
+                        document.getElementById('inactiveUsers').textContent = stats.inactive_users;
+                        document.getElementById('usersWithEmail').textContent = stats.users_with_email;
+                    }
+                } catch (error) {
+                    console.error('Error loading user stats:', error);
+                }
+            }
+
+            renderUsers(users) {
+                const container = document.getElementById('usersList');
+                
+                if (users.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No users found</h3>
+                            <p class="text-gray-400">Create your first user account</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = users.map(user => `
+                        <div class="bg-gray-600 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-10 h-10 bg-gradient-to-r from-netflix-red to-red-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white">${user.username}</h4>
+                                    <p class="text-sm text-gray-400">${user.email || 'No email'}</p>
+                                    <p class="text-xs text-gray-500">Created: ${new Date(user.created_at).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'}">
+                                    ${user.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                                <button onclick="adminPanel.editUser(${user.id})" 
+                                        class="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors" title="Edit User">
+                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="adminPanel.deleteUser(${user.id}, '${this.escapeHtml(user.username)}')" 
+                                        class="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="Delete User">
+                                    <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            async handleAddUser(e) {
+                e.preventDefault();
+                
+                const userData = {
+                    username: document.getElementById('newUsername').value.trim(),
+                    password: document.getElementById('newPassword').value,
+                    email: document.getElementById('newEmail').value.trim() || null
+                };
+                
+                if (!userData.username || !userData.password) {
+                    this.showNotification('Username and password are required!', 'error');
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('addUserBtn');
+                submitBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Adding...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.authToken}`
+                        },
+                        body: JSON.stringify(userData)
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('User added successfully!', 'success');
+                        document.getElementById('addUserForm').reset();
+                        await this.loadUsers();
+                        await this.loadUserStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to add user', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding user:', error);
+                    this.showNotification('Failed to add user. Please try again.', 'error');
+                } finally {
+                    submitBtn.innerHTML = 'Add User';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            async deleteUser(id, username) {
+                if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+                
+                try {
+                    const response = await fetch(`/api/users/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${this.authToken}` }
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('User deleted successfully!', 'success');
+                        await this.loadUsers();
+                        await this.loadUserStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to delete user', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    this.showNotification('Failed to delete user', 'error');
+                }
+            }
+
+            editUser(id) {
+                // Find the user data
+                const user = this.users.find(u => u.id === id);
+                if (!user) {
+                    this.showNotification('User not found', 'error');
+                    return;
+                }
+
+                // Populate form fields
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUsername').value = user.username || '';
+                document.getElementById('editUserEmail').value = user.email || '';
+                document.getElementById('editUserPassword').value = '';
+                document.getElementById('editUserActive').checked = user.is_active;
+
+                // Show modal
+                document.getElementById('editUserModal').classList.remove('hidden');
+            }
+
+            closeEditUserModal() {
+                document.getElementById('editUserModal').classList.add('hidden');
+            }
+
+            async handleEditUser(e) {
+                e.preventDefault();
+
+                const id = document.getElementById('editUserId').value;
+                const userData = {
+                    username: document.getElementById('editUsername').value.trim(),
+                    email: document.getElementById('editUserEmail').value.trim() || null,
+                    is_active: document.getElementById('editUserActive').checked
+                };
+
+                const password = document.getElementById('editUserPassword').value.trim();
+                if (password) {
+                    userData.password = password;
+                }
+
+                const submitBtn = document.getElementById('editUserBtn');
+                submitBtn.innerHTML = '<div class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>Saving...';
+                submitBtn.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/users/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.authToken}`
+                        },
+                        body: JSON.stringify(userData)
+                    });
+
+                    if (response.ok) {
+                        this.showNotification('User updated successfully!', 'success');
+                        this.closeEditUserModal();
+                        await this.loadUsers();
+                        await this.loadUserStats();
+                    } else {
+                        const data = await response.json();
+                        this.showNotification(data.error || 'Failed to update user', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating user:', error);
+                    this.showNotification('Failed to update user', 'error');
+                } finally {
+                    submitBtn.innerHTML = '💾 Save Changes';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const container = document.getElementById('notificationContainer');
+                const notification = document.createElement('div');
+                
+                const bgColors = {
+                    success: 'bg-green-600',
+                    error: 'bg-red-600',
+                    warning: 'bg-yellow-600',
+                    info: 'bg-blue-600'
+                };
+                
+                const icons = {
+                    success: '✅',
+                    error: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️'
+                };
+                
+                notification.className = `notification ${bgColors[type]} text-white px-6 py-3 rounded-lg shadow-lg mb-2 flex items-center space-x-2`;
+                notification.innerHTML = `
+                    <span>${icons[type]}</span>
+                    <span>${message}</span>
+                `;
+                
+                container.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 100);
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+            }
+
+            truncateText(text, maxLength) {
+                if (!text || text.length <= maxLength) return text;
+                return text.substring(0, maxLength) + '...';
+            }
+
+            escapeHtml(text) {
+                return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+            }
+        }
+
+        // Global functions
+        function showAddMovieForm() {
+            window.adminPanel.showAddMovieForm();
+        }
+
+        function hideAddMovieForm() {
+            window.adminPanel.hideAddMovieForm();
+        }
+
+        function normalizeGenres() {
+            window.adminPanel.normalizeGenres();
+        }
+
+        function exportData() {
+            window.adminPanel.exportData();
+        }
+
+        function importData() {
+            document.getElementById('importFile').click();
+        }
+
+        function closeEditModal() {
+            window.adminPanel.closeEditModal();
+        }
+
+        function showUserManagement() {
+            window.adminPanel.showUserManagement();
+        }
+
+        function hideUserManagement() {
+            window.adminPanel.hideUserManagement();
+        }
+
+        function closeEditUserModal() {
+            window.adminPanel.closeEditUserModal();
+        }
+
+        // Initialize admin panel
+        document.addEventListener('DOMContentLoaded', () => {
+            window.adminPanel = new AdminPanel();
+        });
+    </script>
+</body>
+</html>

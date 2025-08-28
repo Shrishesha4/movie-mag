@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Premium Movie Streaming</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E50914'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'netflix-red': '#E50914',
+                        'netflix-black': '#141414',
+                        'dark-gray': '#2F2F2F',
+                        'light-gray': '#B3B3B3'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'slide-down': 'slideDown 0.3s ease-out',
+                        'scale-in': 'scaleIn 0.3s ease-out',
+                        'pulse-slow': 'pulse 2s infinite',
+                        'shimmer': 'shimmer 1.5s infinite linear',
+                        'bounce-gentle': 'bounceGentle 2s ease-in-out infinite',
+                    },
+                    backdropBlur: {
+                        'xs': '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Loading shimmer effect */
+        .shimmer {
+            background: linear-gradient(90deg, #2d2d2d 25%, #3a3a3a 50%, #2d2d2d 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite linear;
+        }
+        
+        /* Movie cards */
+        .movie-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .movie-card:hover {
+            transform: scale(1.05) translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(229, 9, 20, 0.4);
+        }
+        
+        .movie-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(229, 9, 20, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        
+        .movie-card:hover::before {
+            opacity: 1;
+        }
+        
+        /* Genre tags */
+        .genre-tag {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .genre-tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .genre-tag:hover::before {
+            left: 100%;
+        }
+        
+        .genre-tag:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
+        }
+        
+        /* Glass morphism */
+        .glass-morphism {
+            backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(17, 25, 40, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #E50914;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b8070f;
+        }
+        
+        /* Loading skeleton */
+        .skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Search input focus */
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.3);
+        }
+        
+        /* Toast notifications */
+        .toast {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        /* Video player enhancements */
+        .video-controls {
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Mobile responsive improvements */
+        @media (max-width: 768px) {
+            .movie-card:hover {
+                transform: scale(1.02) translateY(-4px);
+            }
+        }
+        
+        /* Dark theme enhancements */
+        body {
+            background: radial-gradient(ellipse at top, #1a1a1a 0%, #0d0d0d 100%);
+        }
+        
+        /* Stats cards */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+        }
+        /* Fix double spinner issue */
+        #loadingOverlay .w-16 {
+            display: none; /* Hide the second spinner */
+        }
+
+        #loadingOverlay .relative .absolute {
+            display: none; /* Hide the overlapping spinner */
+        }
+
+        /* Fix embedded player controls layout and alignment */
+        #embeddedPlayer {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            background: #000;
+        }
+
+        #embeddedPlayer .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #embeddedPlayer video {
+            flex: 1 1 auto;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #000;
+        }
+
+        /* Controls container - properly positioned at bottom */
+        #customControls {
+            position: absolute !important;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: auto;
+            padding: 20px 24px 16px 24px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 60%, transparent 100%);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Progress bar container */
+        .progress-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Progress slider - highly visible YouTube-style */
+        /* Enhanced progress slider visibility */
+        #progressSlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px !important;
+            border-radius: 4px;
+            background: linear-gradient(to right, 
+                #ff0000 0%, 
+                #ff0000 var(--progress, 0%), 
+                rgba(255,255,255,0.3) var(--progress, 0%), 
+                rgba(255,255,255,0.3) 100%) !important;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            margin: 0 12px;
+        }
+
+        #progressSlider:hover {
+            height: 10px !important;
+        }
+
+        #progressSlider::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #ff0000 !important;
+            cursor: pointer !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
+            transition: all 0.2s ease !important;
+            border: 3px solid #fff !important;
+        }
+
+        #progressSlider:hover::-webkit-slider-thumb {
+            width: 24px !important;
+            height: 24px !important;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.7) !important;
+        }
+
+        #progressSlider::-moz-range-thumb {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #ff0000 !important;
+            cursor: pointer !important;
+            border: 3px solid #fff !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Controls row */
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        /* Left controls group */
+        .controls-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Right controls group */
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Time displays */
+        #currentTime, #totalTime {
+            color: #fff !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        /* Control buttons styling */
+        #customControls button {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: none !important;
+            color: #fff !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #customControls button:hover {
+            background: rgba(255, 0, 0, 0.8) !important;
+            transform: scale(1.05);
+        }
+
+        #customControls button svg {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
+
+        /* Volume slider */
+        #volumeSlider {
+            width: 80px !important;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            outline: none;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ff0000;
+            cursor: pointer;
+        }
+
+        /* Speed selector */
+        #speedSelect {
+            background: rgba(0, 0, 0, 0.7) !important;
+            color: #fff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 4px !important;
+            padding: 6px 10px !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+        }
+
+        #speedSelect:hover {
+            border-color: #ff0000 !important;
+        }
+
+        /* Hide double spinner issue */
+        #loadingOverlay .w-16 {
+            display: none;
+        }
+
+        #loadingOverlay .relative .absolute {
+            display: none;
+        }
+
+        /* Ensure body doesn't scroll when player is open */
+        body.player-open {
+            overflow: hidden !important;
+            height: 100vh;
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-netflix-black via-gray-900 to-gray-800 text-white min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-netflix-black">
+        <div class="text-center animate-fade-in">
+            <div class="relative">
+                <div class="w-20 h-20 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+                <div class="absolute inset-0 w-20 h-20 border-4 border-red-300 border-b-transparent rounded-full animate-spin mx-auto" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            </div>
+            <h2 class="text-3xl font-bold text-netflix-red mb-2 animate-bounce-gentle">StreamFlix</h2>
+            <p class="text-light-gray animate-pulse">Loading your entertainment...</p>
+            <div class="mt-4 w-48 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-netflix-red to-red-400 rounded-full animate-pulse" style="width: 60%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 glass-morphism transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-netflix-red rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-2xl font-bold text-netflix-red">StreamFlix</div>
+                    </div>
+                </div>
+
+                <!-- Search & Profile -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative group">
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search movies..." 
+                            class="search-input bg-gray-800 text-white rounded-full px-4 py-2 pl-10 w-64 focus:outline-none focus:ring-2 focus:ring-netflix-red transition-all duration-200 focus:w-80"
+                        >
+                        <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400 group-focus-within:text-netflix-red transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <div id="searchSuggestions" class="absolute top-full left-0 right-0 bg-gray-800 rounded-lg mt-2 shadow-xl hidden max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <button id="refreshBtn" class="p-2 text-gray-400 hover:text-white transition-colors duration-200" title="Refresh Movies">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+                    <button id="showWatchHistory" class="p-2 text-gray-400 hover:text-white transition-colors duration-200" title="Watch History">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </button>
+                    <!-- <div class="relative group">
+                        <div class="w-8 h-8 bg-gradient-to-r from-netflix-red to-red-600 rounded-full flex items-center justify-center cursor-pointer">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Genre Filter -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 mt-20">
+        <div class="glass-morphism p-6 rounded-2xl">
+            <h3 class="text-lg font-semibold mb-4 text-white">Browse by Genre</h3>
+            <div class="flex flex-wrap gap-3" id="genreFilter">
+                <button class="genre-tag bg-netflix-red text-white px-6 py-3 rounded-full text-sm font-medium" data-genre="all">
+                    🎭 All Movies
+                </button>
+                <!-- Dynamic genre tags will be populated here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Watch History Section -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8" id="watchHistorySection" style="display: none;">
+        <div class="glass-morphism p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-white">Continue Watching</h3>
+                <button id="hideWatchHistory" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="watchHistoryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <!-- Watch history cards will be populated here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Movies Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <!-- Section Header -->
+        <div class="mb-8 animate-slide-up">
+            <h2 class="text-3xl font-bold mb-2">Movies</h2>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
+            <!-- Skeleton cards -->
+            <div class="skeleton bg-gray-800 rounded-lg h-80"></div>
+            <div class="skeleton bg-gray-800 rounded-lg h-80"></div>
+            <div class="skeleton bg-gray-800 rounded-lg h-80"></div>
+            <div class="skeleton bg-gray-800 rounded-lg h-80"></div>
+            <div class="skeleton bg-gray-800 rounded-lg h-80"></div>
+        </div>
+        
+        <!-- Movies Grid -->
+        <div id="movieGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 hidden">
+            <!-- Movie cards will be populated here -->
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">😞</div>
+            <h3 class="text-2xl font-bold mb-2">Oops! Something went wrong</h3>
+            <p class="text-light-gray mb-6">We couldn't load the movies. Please try again.</p>
+            <button onclick="window.location.reload()" class="bg-netflix-red hover:bg-red-700 text-white px-6 py-3 rounded-full transition-colors">
+                🔄 Retry
+            </button>
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="text-center py-12 hidden">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-2xl font-bold mb-2">No movies found</h3>
+            <p class="text-light-gray mb-6">Try adjusting your search or filter criteria.</p>
+            <button onclick="clearFilters()" class="bg-netflix-red hover:bg-red-700 text-white px-6 py-3 rounded-full transition-colors">
+                🎭 Show All Movies
+            </button>
+        </div>
+
+        <!-- Loading More -->
+        <div id="loadingMore" class="text-center mt-12 hidden">
+            <div class="inline-block w-8 h-8 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-light-gray">Loading more movies...</p>
+        </div>
+    </main>
+
+    <!-- Embedded Player (Modal) -->
+    <div id="embeddedPlayer" class="fixed inset-0 z-50 bg-black bg-opacity-95 backdrop-blur-sm hidden">
+        <div class="video-container relative w-full h-full">
+            <!-- Header Controls -->
+            <div class="absolute top-0 left-0 right-0 z-50 glass-morphism p-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <button id="closePlayer" class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <div>
+                            <h3 id="currentMovieTitle" class="text-xl font-bold text-white">Movie Title</h3>
+                            <p class="text-sm text-gray-300">Streaming via P2P</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-300">Quality: HD</span>
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center z-30">
+                <div class="text-center max-w-md mx-auto p-6">
+                    <div class="relative mb-6">
+                        <div class="w-20 h-20 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <div class="absolute inset-0 w-16 h-16 border-4 border-red-300 border-b-transparent rounded-full animate-spin mx-auto mt-2 ml-2" style="animation-direction: reverse;"></div>
+                    </div>
+                    <h4 class="text-xl font-semibold text-white mb-2">Preparing Your Movie</h4>
+                    <p id="loadingText" class="text-light-gray mb-6">Initializing torrent stream...</p>
+                    
+                    <!-- Progress Bar -->
+                    <div id="torrentProgress" class="hidden">
+                        <div class="w-80 bg-gray-700 rounded-full h-3 mx-auto mb-4 overflow-hidden">
+                            <div id="progressBar" class="h-full bg-gradient-to-r from-netflix-red to-red-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-sm text-light-gray">
+                            <div class="text-center">
+                                <div id="progressText" class="font-semibold">0%</div>
+                                <div>Progress</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="downloadSpeed" class="font-semibold">0 B/s</div>
+                                <div>Speed</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="peersCount" class="font-semibold">0</div>
+                                <div>Peers</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tips -->
+                    <div class="mt-8 p-4 bg-gray-800 rounded-lg">
+                        <p class="text-sm text-gray-300">💡 <strong>Tip:</strong> For best streaming quality, ensure stable internet connection</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Element Container -->
+            <div id="videoElement" class="w-full h-full flex items-center justify-center"></div>
+
+            <!-- Enhanced Custom Controls with Progress Bar -->
+            <div id="customControls" class="absolute bottom-0 left-0 right-0 video-controls p-6 hidden transition-opacity duration-300">
+                <!-- Progress Bar Container -->
+                <div class="progress-container mb-4">
+                    <span id="currentTime">0:00</span>
+                    <input 
+                        type="range" 
+                        id="progressSlider" 
+                        class="flex-1 mx-3"
+                        min="0" 
+                        max="100" 
+                        value="0"
+                        step="0.1"
+                    >
+                    <span id="totalTime">0:00</span>
+                </div>
+
+                
+                <!-- Control Buttons Row -->
+                <div class="controls-row">
+                    <div class="controls-left">
+                        <button id="playPauseBtn">
+                            ▶️ Play
+                        </button>
+                        <button id="skipBackBtn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"></path>
+                            </svg>
+                        </button>
+                        <button id="skipForwardBtn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798L4.555 5.168z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="controls-right">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.773l-4.146-3.146H2a1 1 0 01-1-1V7.293a1 1 0 011-1h2.237l4.146-3.146a1 1 0 011.617.773zM7.646 7.146L6 8.293H3v3.414h3l1.646 1.147V7.146z" clip-rule="evenodd"></path>
+                            </svg>
+                            <input type="range" id="volumeSlider" class="accent-netflix-red" min="0" max="100" value="100">
+                        </div>
+                        <select id="speedSelect">
+                            <option value="0.5">0.5×</option>
+                            <option value="0.75">0.75×</option>
+                            <option value="1" selected>1×</option>
+                            <option value="1.25">1.25×</option>
+                            <option value="1.5">1.5×</option>
+                            <option value="2">2×</option>
+                        </select>
+                        <button id="fullscreenBtn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script>
+        // Global functions
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.querySelector('[data-genre="all"]').click();
+        }
+    </script>
+    <script src="watchTimeManager.js"></script>
+    <script src="embedded-player.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
