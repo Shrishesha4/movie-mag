@@ -1,0 +1,69 @@
+{
+  "version": "2",
+  "name": "Movie Streamer",
+  "description": "A Dockerized torrent movie streaming platform with user authentication and watch time tracking",
+  "repository": {
+    "url": "https://github.com/shrishesha4/movie-streamer",
+    "stackfile": "docker-compose.yml"
+  },
+  "logo": "https://raw.githubusercontent.com/shrishesha4/movie-streamer/main/logo.png",
+  "env": [
+    {
+      "name": "APP_PORT",
+      "label": "Application Port",
+      "description": "Port for the main application (default: 3000)",
+      "default": "3000",
+      "preset": true
+    },
+    {
+      "name": "DB_NAME",
+      "label": "Database Name",
+      "description": "PostgreSQL database name",
+      "default": "moviedb",
+      "preset": true
+    },
+    {
+      "name": "DB_USER",
+      "label": "Database User",
+      "description": "PostgreSQL username",
+      "default": "movieuser",
+      "preset": true
+    },
+    {
+      "name": "DB_PASSWORD",
+      "label": "Database Password",
+      "description": "PostgreSQL password (change this!)",
+      "default": "moviepass",
+      "preset": true
+    },
+    {
+      "name": "JWT_SECRET",
+      "label": "JWT Secret",
+      "description": "Secret key for JWT token generation (change this!)",
+      "default": "your-super-secret-jwt-key-change-this",
+      "preset": true
+    },
+    {
+      "name": "ADMIN_USERNAME",
+      "label": "Admin Username",
+      "description": "Initial admin account username",
+      "default": "admin",
+      "preset": true
+    },
+    {
+      "name": "ADMIN_PASSWORD",
+      "label": "Admin Password",
+      "description": "Initial admin account password (change this!)",
+      "default": "admin123",
+      "preset": true
+    },
+    {
+      "name": "DOMAIN",
+      "label": "Domain",
+      "description": "Domain name for Traefik routing (optional)",
+      "default": "localhost",
+      "preset": false
+    }
+  ],
+  "note": "This template deploys a complete movie streaming platform with PostgreSQL database, Redis cache, and user authentication. Make sure to change the default passwords and JWT secret for production use."
+}

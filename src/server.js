@@ -131,7 +131,8 @@ app.get('/health', async (req, res) => {
 app.get('/', async (req, res) => {
   // Check if any users exist to determine if app is locked down
   try {
-    const usersExist = await fetch('http://localhost:3000/api/auth/users-exist');
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const usersExist = await fetch(`${baseUrl}/api/auth/users-exist`);
     const data = await usersExist.json();
     
     if (!data.exists) {

@@ -1,39 +1,72 @@
+version: '3.8'
+
 services:
-  app:
+  movie-streamer:
     build: .
+    container_name: movie-streamer
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://movieuser:moviepass@postgres:5432/moviedb
+      - DATABASE_URL=postgresql://${DB_USER:-movieuser}:${DB_PASSWORD:-moviepass}@postgres:5432/${DB_NAME:-moviedb}
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key-change-this
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=admin123
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-moviedb}
+      - DB_USER=${DB_USER:-movieuser}
+      - DB_PASSWORD=${DB_PASSWORD:-moviepass}
     depends_on:
       - postgres
       - redis
     volumes:
-      - ./src/public:/app/src/public
+      - movie_data:/app/data
     restart: unless-stopped
+    networks:
+      - movie-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.movie-streamer.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.movie-streamer.entrypoints=web"
+      - "traefik.http.services.movie-streamer.loadbalancer.server.port=3000"
 
   postgres:
     image: postgres:15-alpine
+    container_name: movie-streamer-postgres
     environment:
-      - POSTGRES_DB=moviedb
-      - POSTGRES_USER=movieuser
-      - POSTGRES_PASSWORD=moviepass
+      - POSTGRES_DB=${DB_NAME:-moviedb}
+      - POSTGRES_USER=${DB_USER:-movieuser}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-moviepass}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    networks:
+      - movie-network
+    labels:
+      - "traefik.enable=false"
 
   redis:
     image: redis:7-alpine
+    container_name: movie-streamer-redis
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    networks:
+      - movie-network
+    labels:
+      - "traefik.enable=false"
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  movie_data:
+    driver: local
+
+networks:
+  movie-network:
+    driver: bridge

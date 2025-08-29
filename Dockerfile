@@ -1,18 +1,28 @@
 FROM node:18-alpine
 
+# Install system dependencies
+RUN apk add --no-cache \
+    wget \
+    && rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
-# Install dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm install --only=production
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy source code
 COPY src/ ./src/
 
+# Create data directory
+RUN mkdir -p /app/data && chmod 755 /app/data
+
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S movieuser -u 1001
-RUN chown -R movieuser:nodejs /app
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S movieuser -u 1001 -G nodejs && \
+    chown -R movieuser:nodejs /app
 USER movieuser
 
 EXPOSE 3000
