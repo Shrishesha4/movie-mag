@@ -129,21 +129,21 @@ app.get('/health', async (req, res) => {
 
 // Serve static pages
 app.get('/', async (req, res) => {
-  // Check if any users exist to determine if app is locked down
+  // Check if any admin users exist to determine if app is locked down
   try {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const usersExist = await fetch(`${baseUrl}/api/auth/users-exist`);
-    const data = await usersExist.json();
+    const adminExists = await fetch(`${baseUrl}/api/auth/admin-exists`);
+    const data = await adminExists.json();
     
     if (!data.exists) {
-      // No users exist, redirect to admin setup
+      // No admin users exist, redirect to admin setup
       return res.redirect('/admin');
     }
     
-    // Users exist, serve the main app (which will handle auth on frontend)
+    // Admin exists, serve the main app (which will handle auth on frontend)
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   } catch (error) {
-    console.error('Error checking users:', error);
+    console.error('Error checking admin users:', error);
     // Fallback to serving main app
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
