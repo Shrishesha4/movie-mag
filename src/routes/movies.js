@@ -58,7 +58,7 @@ async function analyzeTorrent(magnet) {
     try {
         const response = await fetch(`http://localhost:7000/api/torrent/info/${encodeURIComponent(magnet)}`, {
             timeout: 30000,
-            headers: { 'User-Agent': 'StreamFlix/1.0' }
+            headers: { 'User-Agent': 'MovieMag/1.0' }
         });
         
         if (response.ok) {

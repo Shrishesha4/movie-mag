@@ -1125,7 +1125,7 @@ class MovieApp {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🎬 Initializing StreamFlix...');
+    console.log('🎬 Initializing MovieMag...');
     window.movieApp = new MovieApp();
 });
 
@@ -1152,8 +1152,8 @@ window.movieUtils = {
 
     shareMovie: async (movie) => {
         const shareData = {
-            title: `${movie.title} - StreamFlix`,
-            text: `Watch ${movie.title} on StreamFlix`,
+            title: `${movie.title} - MovieMag`,
+            text: `Watch ${movie.title} on MovieMag`,
             url: `${window.location.origin}/player/${movie.id}`
         };
 

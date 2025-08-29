@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamFlix Admin - Movie Management Dashboard</title>
+    <title>MovieMag Admin - Movie Management Dashboard</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E50914'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'/%3E%3C/svg%3E">
@@ -168,7 +168,7 @@
             <div class="relative mb-6">
                 <div class="w-20 h-20 border-4 border-netflix-red border-t-transparent rounded-full animate-spin mx-auto"></div>
             </div>
-            <h2 class="text-3xl font-bold text-netflix-red mb-2">StreamFlix Admin</h2>
+            <h2 class="text-3xl font-bold text-netflix-red mb-2">MovieMag Admin</h2>
             <p class="text-gray-400">Loading dashboard...</p>
         </div>
     </div>
@@ -184,7 +184,7 @@
                                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                             </svg>
                         </div>
-                        <div class="text-2xl font-bold text-netflix-red">StreamFlix</div>
+                        <div class="text-2xl font-bold text-netflix-red">MovieMag</div>
                         <span class="text-sm bg-gray-700 px-2 py-1 rounded-full">Admin</span>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-white mb-2">Welcome to StreamFlix!</h1>
+                    <h1 class="text-3xl font-bold text-white mb-2">Welcome to MovieMag!</h1>
                     <p class="text-gray-400">Let's set up your administrator account to get started</p>
                 </div>
 
@@ -1528,7 +1528,7 @@
                 
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `streamflix_movies_${new Date().toISOString().split('T')[0]}.json`;
+                link.download = `MovieMag_movies_${new Date().toISOString().split('T')[0]}.json`;
                 link.click();
                 
                 URL.revokeObjectURL(url);
