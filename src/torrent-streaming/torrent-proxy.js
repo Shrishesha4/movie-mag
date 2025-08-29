@@ -1,367 +1,3 @@
-// const express = require('express');
-// const path = require('path');
-
-// class TorrentStreamingProxy {
-//     constructor() {
-//         this.app = express();
-//         this.client = null;
-//         this.WebTorrent = null;
-//         this.activeStreams = new Map();
-        
-//         this.initializeWebTorrent();
-//         this.setupRoutes();
-//         this.setupCleanup();
-//     }
-
-//     async initializeWebTorrent() {
-//         try {
-//             // Use dynamic import for ES modules
-//             const { default: WebTorrent } = await import('webtorrent');
-//             this.WebTorrent = WebTorrent;
-//             this.client = new WebTorrent();
-//             console.log('✅ WebTorrent initialized successfully');
-//         } catch (error) {
-//             console.error('❌ Failed to initialize WebTorrent:', error);
-//             throw error;
-//         }
-//     }
-
-//     setupRoutes() {
-//         // Get torrent info (files, metadata)
-//         this.app.get('/api/torrent/info/:magnetHash', async (req, res) => {
-//             if (!this.client) {
-//                 return res.status(503).json({ error: 'WebTorrent not initialized yet' });
-//             }
-
-//             try {
-//                 const magnetHash = decodeURIComponent(req.params.magnetHash);
-//                 console.log('Getting torrent info for:', magnetHash);
-
-//                 const torrent = this.client.add(magnetHash, { 
-//                     destroyStoreOnDestroy: true,
-//                     skipVerify: false 
-//                 });
-
-//                 torrent.on('ready', () => {
-//                     const videoFiles = torrent.files.filter(file => 
-//                         /\.(mp4|mkv|webm|avi|mov|m4v)$/i.test(file.name)
-//                     );
-
-//                     res.json({
-//                         name: torrent.name,
-//                         infoHash: torrent.infoHash,
-//                         length: torrent.length,
-//                         files: videoFiles.map(file => ({
-//                             name: file.name,
-//                             length: file.length,
-//                             index: torrent.files.indexOf(file)
-//                         }))
-//                     });
-
-//                     // Clean up after sending info
-//                     setTimeout(() => {
-//                         if (this.client) {
-//                             this.client.remove(torrent);
-//                         }
-//                     }, 5000);
-//                 });
-
-//                 torrent.on('error', (err) => {
-//                     console.error('Torrent error:', err);
-//                     res.status(500).json({ error: err.message });
-//                 });
-
-//                 // Timeout after 30 seconds
-//                 setTimeout(() => {
-//                     if (!res.headersSent) {
-//                         res.status(408).json({ error: 'Torrent info timeout' });
-//                         if (this.client) {
-//                             this.client.remove(torrent);
-//                         }
-//                     }
-//                 }, 30000);
-
-//             } catch (error) {
-//                 res.status(400).json({ error: 'Invalid magnet link' });
-//             }
-//         });
-
-//         // Stream video file
-//         this.app.get('/api/torrent/stream/:magnetHash/:fileIndex', (req, res) => {
-//             if (!this.client) {
-//                 return res.status(503).json({ error: 'WebTorrent not initialized yet' });
-//             }
-
-//             const magnetHash = decodeURIComponent(req.params.magnetHash);
-//             const fileIndex = parseInt(req.params.fileIndex);
-            
-//             console.log(`🎬 Streaming file ${fileIndex} from torrent:`, magnetHash);
-
-//             const streamId = `${magnetHash}-${fileIndex}`;
-            
-//             // Check if already streaming
-//             if (this.activeStreams.has(streamId)) {
-//                 const { torrent } = this.activeStreams.get(streamId);
-//                 this.streamFile(torrent, fileIndex, req, res);
-//                 return;
-//             }
-
-//             const torrent = this.client.add(magnetHash, { 
-//                 destroyStoreOnDestroy: true,
-//                 strategy: 'sequential' // Better for streaming
-//             });
-
-//             torrent.on('ready', () => {
-//                 console.log('✅ Torrent ready for streaming');
-//                 this.activeStreams.set(streamId, { torrent, lastAccess: Date.now() });
-//                 this.streamFile(torrent, fileIndex, req, res);
-//             });
-
-//             torrent.on('error', (err) => {
-//                 console.error('Streaming error:', err);
-//                 res.status(500).json({ error: err.message });
-//             });
-
-//             // Cleanup on client disconnect
-//             req.on('close', () => {
-//                 console.log('Client disconnected, cleaning up stream');
-//                 this.activeStreams.delete(streamId);
-//                 if (this.client) {
-//                     this.client.remove(torrent);
-//                 }
-//             });
-//         });
-
-//         // Health check
-//         this.app.get('/api/torrent/health', (req, res) => {
-//             res.json({
-//                 status: this.client ? 'ready' : 'initializing',
-//                 activeStreams: this.activeStreams.size,
-//                 activeTorrents: this.client ? this.client.torrents.length : 0,
-//                 downloadSpeed: this.client ? this.client.downloadSpeed : 0,
-//                 uploadSpeed: this.client ? this.client.uploadSpeed : 0
-//             });
-//         });
-//     }
-
-//     streamFile(torrent, fileIndex, req, res) {
-//         const file = torrent.files[fileIndex];
-        
-//         if (!file) {
-//             res.status(404).json({ error: 'File not found' });
-//             return;
-//         }
-
-//         console.log(`📡 Streaming file: ${file.name} (${file.length} bytes)`);
-
-//         const range = req.headers.range;
-//         const fileSize = file.length;
-
-//         // Set appropriate content type
-//         const ext = path.extname(file.name).toLowerCase();
-//         const contentTypes = {
-//             '.mp4': 'video/mp4',
-//             '.mkv': 'video/x-matroska',
-//             '.webm': 'video/webm',
-//             '.avi': 'video/x-msvideo',
-//             '.mov': 'video/quicktime'
-//         };
-        
-//         res.setHeader('Content-Type', contentTypes[ext] || 'video/mp4');
-//         res.setHeader('Accept-Ranges', 'bytes');
-//         res.setHeader('Cache-Control', 'no-cache');
-
-//         if (range) {
-//             // Handle range requests for seeking
-//             const parts = range.replace(/bytes=/, "").split("-");
-//             const start = parseInt(parts[0], 10);
-//             const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-//             const chunksize = (end - start) + 1;
-
-//             res.status(206);
-//             res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
-//             res.setHeader('Content-Length', chunksize);
-
-//             const stream = file.createReadStream({ start, end });
-//             stream.pipe(res);
-
-//             stream.on('error', (err) => {
-//                 console.error('Stream error:', err);
-//                 if (!res.headersSent) {
-//                     res.status(500).end();
-//                 }
-//             });
-//         } else {
-//             // Stream entire file
-//             res.setHeader('Content-Length', fileSize);
-//             const stream = file.createReadStream();
-//             stream.pipe(res);
-
-//             stream.on('error', (err) => {
-//                 console.error('Stream error:', err);
-//                 if (!res.headersSent) {
-//                     res.status(500).end();
-//                 }
-//             });
-//         }
-//     }
-
-//     setupCleanup() {
-//         // Clean up inactive streams every 5 minutes
-//         setInterval(() => {
-//             const now = Date.now();
-//             const maxAge = 10 * 60 * 1000; // 10 minutes
-
-//             for (const [streamId, { torrent, lastAccess }] of this.activeStreams) {
-//                 if (now - lastAccess > maxAge) {
-//                     console.log('🧹 Cleaning up inactive stream:', streamId);
-//                     if (this.client) {
-//                         this.client.remove(torrent);
-//                     }
-//                     this.activeStreams.delete(streamId);
-//                 }
-//             }
-//         }, 5 * 60 * 1000);
-//     }
-
-//     async start(port = 7000) {
-//         // Wait for WebTorrent to initialize
-//         while (!this.client) {
-//             await new Promise(resolve => setTimeout(resolve, 100));
-//         }
-
-//         this.app.listen(port, () => {
-//             console.log(`🎬 Torrent streaming proxy running on port ${port}`);
-//         });
-//     }
-// }
-
-// module.exports = TorrentStreamingProxy;
-
-
-
-
-
-
-
-// const express = require('express');
-// const torrentStream = require('torrent-stream');
-// const path = require('path');
-
-// class TorrentStreamingProxy {
-//     constructor() {
-//         this.app = express();
-//         this.activeEngines = new Map();
-//         this.setupRoutes();
-//         this.setupCleanup();
-//     }
-
-//     setupRoutes() {
-//         this.app.get('/api/torrent/stream/:magnetHash/:fileIndex', (req, res) => {
-//             const magnetHash = decodeURIComponent(req.params.magnetHash);
-//             const fileIndex = parseInt(req.params.fileIndex);
-            
-//             console.log(`🎬 Streaming file ${fileIndex} from torrent`);
-
-//             const engine = torrentStream(magnetHash, {
-//                 tmp: '/tmp/torrents',
-//                 verify: false
-//             });
-
-//             engine.on('ready', () => {
-//                 const file = engine.files[fileIndex];
-//                 if (!file) {
-//                     return res.status(404).json({ error: 'File not found' });
-//                 }
-
-//                 console.log(`📡 Streaming: ${file.name}`);
-                
-//                 const range = req.headers.range;
-//                 const fileSize = file.length;
-                
-//                 res.setHeader('Content-Type', 'video/mp4');
-//                 res.setHeader('Accept-Ranges', 'bytes');
-                
-//                 if (range) {
-//                     const parts = range.replace(/bytes=/, "").split("-");
-//                     const start = parseInt(parts[0], 10);
-//                     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-                    
-//                     res.status(206);
-//                     res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
-//                     res.setHeader('Content-Length', (end - start) + 1);
-                    
-//                     file.createReadStream({ start, end }).pipe(res);
-//                 } else {
-//                     res.setHeader('Content-Length', fileSize);
-//                     file.createReadStream().pipe(res);
-//                 }
-//             });
-
-//             engine.on('error', (err) => {
-//                 console.error('Engine error:', err);
-//                 res.status(500).json({ error: err.message });
-//             });
-
-//             req.on('close', () => {
-//                 engine.destroy();
-//             });
-//         });
-
-//         this.app.get('/api/torrent/health', (req, res) => {
-//             res.json({ status: 'ready', activeStreams: this.activeEngines.size });
-//         });
-
-//         // Add this to your torrent-proxy.js setupRoutes() method
-
-//         // Root route to prevent 403 on direct access
-//         this.app.get('/', (req, res) => {
-//             res.json({ 
-//                 status: 'Torrent Streaming Service',
-//                 version: '1.0.0',
-//                 endpoints: [
-//                     'GET /api/torrent/health',
-//                     'GET /api/torrent/info/:magnetHash',
-//                     'GET /api/torrent/stream/:magnetHash/:fileIndex'
-//                 ]
-//             });
-//         });
-
-//         // Add CORS headers for cross-origin requests
-//         this.app.use((req, res, next) => {
-//             res.header('Access-Control-Allow-Origin', '*');
-//             res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-//             res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-//             if (req.method === 'OPTIONS') {
-//                 res.sendStatus(200);
-//             } else {
-//                 next();
-//             }
-//         });
-
-//     }
-
-//     setupCleanup() {
-//         // Cleanup logic here
-//     }
-
-//     start(port = 7000) {
-//         this.app.listen(port, () => {
-//             console.log(`🎬 Torrent streaming proxy running on port ${port}`);
-//         });
-//     }
-// }
-
-// module.exports = TorrentStreamingProxy;
-
-
-
-
-
-
-
-
-
 const express = require('express');
 const path = require('path');
 
@@ -377,9 +13,12 @@ class TorrentStreamingProxy {
     constructor() {
         this.app = express();
         this.activeEngines = new Map();
+        this.persistentEngines = new Map(); // For 24-hour caching
+        this.watchProgress = new Map(); // Track watch progress per movie
         this.setupMiddleware();
         this.setupRoutes();
         this.setupCleanup();
+        this.startPersistentCacheManager();
     }
 
     setupMiddleware() {
@@ -418,9 +57,22 @@ class TorrentStreamingProxy {
             res.json({
                 status: 'ready',
                 activeStreams: this.activeEngines.size,
+                persistentStreams: this.persistentEngines.size,
                 timestamp: new Date().toISOString(),
                 available: !!torrentStream
             });
+        });
+
+        // Update watch progress endpoint
+        this.app.post('/api/torrent/progress', (req, res) => {
+            const { magnetHash, progress } = req.body;
+            
+            if (!magnetHash || progress === undefined) {
+                return res.status(400).json({ error: 'magnetHash and progress are required' });
+            }
+            
+            this.updateWatchProgress(magnetHash, progress);
+            res.json({ success: true, progress });
         });
 
         if (!torrentStream) {
@@ -493,12 +145,8 @@ class TorrentStreamingProxy {
             
             console.log(`🎬 Streaming file ${fileIndex} from torrent`);
 
-            const engine = torrentStream(magnetHash, {
-                tmp: '/tmp/torrents',
-                verify: false,
-                dht: true,
-                tracker: true
-            });
+            // Use persistent engine for better caching
+            const engine = this.getOrCreatePersistentEngine(magnetHash);
 
             engine.on('ready', () => {
                 const file = engine.files[fileIndex];
@@ -600,6 +248,160 @@ class TorrentStreamingProxy {
                 }
             }
         }, 5 * 60 * 1000);
+    }
+
+    startPersistentCacheManager() {
+        // Manage persistent cache every hour
+        setInterval(() => {
+            this.cleanupPersistentCache();
+        }, 3600000); // 1 hour
+    }
+
+    cleanupPersistentCache() {
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        
+        for (const [magnetHash, { engine, lastAccess, watchProgress }] of this.persistentEngines) {
+            const timeSinceLastAccess = now - lastAccess;
+            
+            // If watched completely (90% or more), remove immediately
+            if (watchProgress >= 0.9) {
+                console.log(`🗑️ Removing completed movie from cache: ${magnetHash}`);
+                engine.destroy();
+                this.persistentEngines.delete(magnetHash);
+                this.watchProgress.delete(magnetHash);
+            }
+            // If not watched completely and older than 24 hours, remove
+            else if (timeSinceLastAccess > twentyFourHours) {
+                console.log(`🗑️ Removing old incomplete movie from cache: ${magnetHash} (${Math.round(timeSinceLastAccess / 3600000)}h old)`);
+                engine.destroy();
+                this.persistentEngines.delete(magnetHash);
+                this.watchProgress.delete(magnetHash);
+            }
+            // Keep in cache if watched partially and less than 24 hours old
+            else {
+                console.log(`💾 Keeping movie in cache: ${magnetHash} (${Math.round(timeSinceLastAccess / 3600000)}h old, ${Math.round(watchProgress * 100)}% watched)`);
+            }
+        }
+    }
+
+    updateWatchProgress(magnetHash, progress) {
+        // progress should be between 0 and 1 (0% to 100%)
+        this.watchProgress.set(magnetHash, Math.max(0, Math.min(1, progress)));
+        
+        // Update last access time for persistent engines
+        if (this.persistentEngines.has(magnetHash)) {
+            const engineData = this.persistentEngines.get(magnetHash);
+            engineData.lastAccess = Date.now();
+            engineData.watchProgress = this.watchProgress.get(magnetHash);
+            this.persistentEngines.set(magnetHash, engineData);
+        }
+        
+        console.log(`📊 Watch progress updated for ${magnetHash}: ${Math.round(progress * 100)}%`);
+    }
+
+    getOrCreatePersistentEngine(magnetHash) {
+        // Check if we already have a persistent engine for this magnet
+        if (this.persistentEngines.has(magnetHash)) {
+            const engineData = this.persistentEngines.get(magnetHash);
+            engineData.lastAccess = Date.now();
+            this.persistentEngines.set(magnetHash, engineData);
+            console.log(`♻️ Reusing persistent engine for: ${magnetHash}`);
+            return engineData.engine;
+        }
+
+        // Create new persistent engine with aggressive settings
+        console.log(`🚀 Creating new persistent engine for: ${magnetHash}`);
+        const engine = torrentStream(magnetHash, {
+            tmp: '/tmp/torrents',
+            verify: false,
+            dht: true,
+            tracker: true,
+            // Aggressive preloading settings
+            preload: true,
+            preloadSize: 50 * 1024 * 1024, // 50MB preload buffer
+            // Enhanced connection settings
+            maxConns: 20,
+            downloadLimit: -1, // No download limit
+            uploadLimit: 2000, // 2MB/s upload limit
+            // Keep alive settings
+            keepAlive: true,
+            keepAliveInterval: 30000 // 30 seconds
+        });
+
+        // Store in persistent cache
+        this.persistentEngines.set(magnetHash, {
+            engine,
+            lastAccess: Date.now(),
+            watchProgress: 0
+        });
+
+        // Add periodic status monitoring
+        const statusInterval = setInterval(() => {
+            try {
+                if (engine && !engine.destroyed) {
+                    const progress = engine.progress || 0;
+                    const downloadSpeed = engine.downloadSpeed || 0;
+                    const numPeers = engine.numPeers || 0;
+                    const numSeeds = engine.numSeeds || 0;
+                    
+                    console.log(`📊 Status for ${magnetHash.substring(0, 20)}...: ${Math.round(progress * 100)}% | ${this.formatBytes(downloadSpeed)}/s | Peers: ${numPeers} | Seeds: ${numSeeds}`);
+                    
+                    // If no peers and no download for 30 seconds, log warning
+                    if (numPeers === 0 && downloadSpeed === 0) {
+                        console.warn(`⚠️ No peers available for ${magnetHash.substring(0, 20)}...`);
+                    }
+                } else {
+                    clearInterval(statusInterval);
+                }
+            } catch (error) {
+                console.warn('Error in status monitoring:', error);
+            }
+        }, 10000); // Check every 10 seconds
+
+        // Set up engine event handlers
+        engine.on('ready', () => {
+            console.log(`✅ Persistent engine ready for: ${magnetHash}`);
+            console.log(`📊 Torrent info: ${engine.torrent.name}`);
+            console.log(`📁 Files: ${engine.files.length}`);
+            console.log(`📦 Total size: ${this.formatBytes(engine.torrent.length)}`);
+        });
+
+        engine.on('download', () => {
+            // Update progress periodically
+            try {
+                const progress = engine.progress || 0;
+                const downloadSpeed = engine.downloadSpeed || 0;
+                const uploadSpeed = engine.uploadSpeed || 0;
+                const numPeers = engine.numPeers || 0;
+                const numSeeds = engine.numSeeds || 0;
+                
+                if (progress > 0) {
+                    this.updateWatchProgress(magnetHash, progress);
+                    console.log(`📥 Download progress: ${Math.round(progress * 100)}% | Speed: ${this.formatBytes(downloadSpeed)}/s | Peers: ${numPeers} | Seeds: ${numSeeds}`);
+                }
+            } catch (error) {
+                console.warn('Error in download event handler:', error);
+            }
+        });
+
+        engine.on('wire', (wire) => {
+            console.log(`🔗 New peer connected: ${wire.peerAddress}`);
+        });
+
+        engine.on('error', (err) => {
+            console.error(`❌ Persistent engine error for ${magnetHash}:`, err);
+        });
+
+        return engine;
+    }
+
+    formatBytes(bytes) {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     }
 
     start(port = 7000) {

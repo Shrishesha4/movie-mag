@@ -176,6 +176,10 @@ class EmbeddedPlayer {
     if (this.controlsTimeout) {
         clearTimeout(this.controlsTimeout);
     }
+    
+    if (this.progressUpdateTimeout) {
+        clearTimeout(this.progressUpdateTimeout);
+    }
 
     // Cleanup watch time tracking
     if (this.watchTimeManager) {
@@ -302,7 +306,63 @@ class EmbeddedPlayer {
     this.video.style.width = "100%";
     this.video.style.height = "100%";
     this.video.style.objectFit = "contain";
-    this.video.preload = "metadata";
+    
+    // AGGRESSIVE PRELOADING SETTINGS
+    this.video.preload = "auto"; // Preload entire video aggressively
+    this.video.preload = "metadata"; // Start with metadata, then switch to auto
+    
+    // Enhanced buffering settings (buffered is read-only, managed by browser)
+    // this.video.buffered is read-only and managed by the browser
+    // this.video.readyState is read-only and managed by the browser
+    
+    // Set aggressive buffer settings
+    this.video.addEventListener('loadedmetadata', () => {
+        // Switch to aggressive preloading after metadata is loaded
+        this.video.preload = "auto";
+        
+        // Set custom buffer settings if supported
+        if (this.video.buffered && this.video.buffered.length > 0) {
+            console.log("🎬 Initial buffer loaded:", this.video.buffered.end(0));
+        }
+    });
+    
+    // Monitor buffering progress
+    this.video.addEventListener('progress', () => {
+        if (this.video.buffered && this.video.buffered.length > 0) {
+            const bufferedEnd = this.video.buffered.end(this.video.buffered.length - 1);
+            const duration = this.video.duration || 0;
+            const bufferPercentage = (bufferedEnd / duration) * 100;
+            console.log(`🎬 Buffer progress: ${bufferPercentage.toFixed(1)}% (${this.formatTime(bufferedEnd)})`);
+            
+            // Show buffer progress in UI
+            this.updateBufferProgress(bufferPercentage);
+        }
+    });
+    
+    // Enhanced error handling for buffering
+    this.video.addEventListener('stalled', () => {
+        console.warn("⚠️ Video stalled, attempting to resume...");
+        this.showToast("Buffering...", "info");
+    });
+    
+    this.video.addEventListener('waiting', () => {
+        console.log("⏳ Video waiting for data...");
+        this.showToast("Loading more data...", "info");
+    });
+    
+    this.video.addEventListener('canplay', () => {
+        console.log("✅ Video can start playing");
+        this.hideToast();
+    });
+    
+    this.video.addEventListener('canplaythrough', () => {
+        console.log("✅ Video can play through without interruption");
+        this.hideToast();
+        
+        // Start aggressive preloading once video is ready
+        this.startAggressivePreloading();
+    });
+    
     this.video.src = streamUrl;
 
     const container = document.getElementById("videoElement");
@@ -339,9 +399,9 @@ class EmbeddedPlayer {
 
     // Enhanced WebTorrent configuration for better streaming
     this.client = new WebTorrent({
-        maxConns: 10,        // Reduce connections to prevent stalling
+        maxConns: 100,        // Reduce connections to prevent stalling
         downloadLimit: -1,   // No download limit
-        uploadLimit: 1000,   // Limit upload to focus on download
+        uploadLimit: -1,   // Limit upload to focus on download
         dht: true,
         lsd: false,          // Disable Local Service Discovery in browser
         webSeeds: true,
@@ -358,7 +418,316 @@ class EmbeddedPlayer {
                 'udp://open.demonii.com:1337/announce',
                 'udp://open.stealth.si:80/announce',
                 'udp://exodus.desync.com:6969/announce',
-                'udp://tracker.bittor.pw:1337/announce'
+                'udp://tracker.bittor.pw:1337/announce',
+                 // Keep some WSS trackers but don't rely on them entirely
+                 'wss://tracker.openwebtorrent.com',
+                 'wss://tracker.btorrent.xyz',
+                 
+                 // Add reliable UDP trackers
+                 'udp://tracker.openbittorrent.com:80/announce',
+                 'udp://tracker.opentrackr.org:1337/announce',
+                 'udp://explodie.org:6969/announce',
+                 'udp://tracker.internetwarriors.net:1337/announce',
+                 'udp://tracker.opentrackr.org:1337/announce',
+                 'udp://open.demonii.com:1337/announce',
+                 'udp://open.stealth.si:80/announce',
+                 'udp://explodie.org:6969/announce',
+                 'udp://exodus.desync.com:6969/announce',
+                 'udp://tracker.bittor.pw:1337/announce',
+                 'udp://open.free-tracker.ga:6969/announce',
+                 'udp://leet-tracker.moe:1337/announce',
+                 'udp://isk.richardsw.club:6969/announce',
+                 'udp://hificode.in:6969/announce',
+                 'udp://discord.heihachi.pw:6969/announce',
+                 'udp://tracker.opentrackr.org:1337/announce',
+                 'udp://open.demonii.com:1337/announce',
+                 'udp://open.stealth.si:80/announce',
+                 'udp://explodie.org:6969/announce',
+                 'udp://exodus.desync.com:6969/announce',
+                 'udp://tracker.bittor.pw:1337/announce',
+                 'udp://open.free-tracker.ga:6969/announce',
+                 'udp://leet-tracker.moe:1337/announce',
+                 'udp://isk.richardsw.club:6969/announce',
+                 'udp://hificode.in:6969/announce',
+                 'udp://discord.heihachi.pw:6969/announce',
+                 'udp://udp.tracker.projectk.org:23333/announce',
+                 'udp://ttk2.nbaonlineservice.com:6969/announce',
+                 'udp://tracker2.dler.org:80/announce',
+                 'udp://tracker.zupix.online:6969/announce',
+                 'udp://tracker.valete.tf:9999/announce',
+                 'udp://tracker.torrust-demo.com:6969/announce',
+                 'udp://tracker.therarbg.to:6969/announce',
+                 'udp://tracker.theoks.net:6969/announce',
+                 'udp://tracker.srv00.com:6969/announce',
+                 'udp://tracker.skillindia.site:6969/announce',
+                 'udp://tracker.plx.im:6969/announce',
+                 'udp://tracker.kmzs123.cn:17272/announce',
+                 'udp://tracker.hifitechindia.com:6969/announce',
+                 'udp://tracker.hifimarket.in:2710/announce',
+                 'udp://tracker.healthcareindia.store:1337/announce',
+                 'udp://tracker.gmi.gd:6969/announce',
+                 'udp://tracker.gigantino.net:6969/announce',
+                 'udp://tracker.fnix.net:6969/announce',
+                 'udp://tracker.filemail.com:6969/announce',
+                 'udp://tracker.dler.org:6969/announce',
+                 'udp://tracker.bitcoinindia.space:6969/announce',
+                 'udp://tracker-udp.gbitt.info:80/announce',
+                 'udp://tr4ck3r.duckdns.org:6969/announce',
+                 'udp://t.overflow.biz:6969/announce',
+                 'udp://retracker01-msk-virt.corbina.net:80/announce',
+                 'udp://retracker.lanta.me:2710/announce',
+                 'udp://public.tracker.vraphim.com:6969/announce',
+                 'udp://p4p.arenabg.com:1337/announce',
+                 'udp://opentracker.io:6969/announce',
+                 'udp://open.dstud.io:6969/announce',
+                 'udp://martin-gebhardt.eu:25/announce',
+                 'udp://ipv4announce.sktorrent.eu:6969/announce',
+                 'udp://evan.im:6969/announce',
+                 'udp://d40969.acod.regrucolo.ru:6969/announce',
+                 'udp://bittorrent-tracker.e-n-c-r-y-p-t.net:1337/announce',
+                 'udp://bandito.byterunner.io:6969/announce',
+                 'udp://6ahddutb1ucc3cp.ru:6969/announce',
+                 'udp://1c.premierzal.ru:6969/announce',
+                 'udp://tracker.yume-hatsuyuki.moe:6969/announce',
+                 'udp://ipv4.rer.lol:2710/announce',
+                 'udp://concen.org:6969/announce',
+                 'udp://bt.rer.lol:6969/announce',
+                 'udp://bt.rer.lol:2710/announce',
+                 'http://www.torrentsnipe.info:2701/announce',
+                 'http://www.genesis-sp.org:2710/announce',
+                 'http://tracker810.xyz:11450/announce',
+                 'http://tracker.xiaoduola.xyz:6969/announce',
+                 'http://tracker.vanitycore.co:6969/announce',
+                 'http://tracker.sbsub.com:2710/announce',
+                 'http://tracker.moxing.party:6969/announce',
+                 'http://tracker.lintk.me:2710/announce',
+                 'http://tracker.ipv6tracker.org:80/announce',
+                 'wss://tracker.btorrent.xyz:443/announce',
+                 'wss://tracker.webtorrent.dev:443/announce',
+                 'wss://tracker.ghostchu-services.top:443/announce',
+                 'wss://tracker.files.fm:7073/announce',
+                 'ws://tracker.ghostchu-services.top:80/announce',
+                 'ws://tracker.files.fm:7072/announce',
+                 'udp://tracker.opentrackr.org:1337/announce',
+                  'udp://p4p.arenabg.com:1337/announce',
+                  'udp://d40969.acod.regrucolo.ru:6969/announce',
+                  'udp://evan.im:6969/announce',
+                  'https://tracker.jdx3.org:443/announce',
+                  'udp://retracker.lanta.me:2710/announce',
+                  'http://lucke.fenesisu.moe:6969/announce',
+                  'http://tracker.renfei.net:8080/announce',
+                  'https://tracker.expli.top:443/announce',
+                  'https://tr.nyacat.pw:443/announce',
+                  'udp://tracker.ducks.party:1984/announce',
+                  'udp://extracker.dahrkael.net:6969/announce',
+                  'http://ipv4.rer.lol:2710/announce',
+                  'udp://tracker.tvunderground.org.ru:3218/announce',
+                  'udp://tracker.kmzs123.cn:17272/announce',
+                  'https://tracker.alaskantf.com:443/announce',
+                  'udp://tracker.dler.com:6969/announce',
+                  'http://bt.okmp3.ru:2710/announce',
+                  'udp://tracker.torrent.eu.org:451/announce',
+                  'http://tracker.mywaifu.best:6969/announce',
+                  'udp://bandito.byterunner.io:6969/announce',
+                  'udp://tracker.plx.im:6969/announce',
+                  'udp://open.stealth.si:80/announce',
+                  'https://tracker.moeblog.cn:443/announce',
+                  'https://tracker.yemekyedim.com:443/announce',
+                  'udp://tracker.fnix.net:6969/announce',
+                  'udp://martin-gebhardt.eu:25/announce',
+                  'udp://tracker.valete.tf:9999/announce',
+                  'http://tracker.bt4g.com:2095/announce',
+                  'udp://retracker01-msk-virt.corbina.net:80/announce',
+                  'udp://tracker.srv00.com:6969/announce',
+                  'udp://open.demonii.com:1337/announce',
+                  'udp://tracker.torrust-demo.com:6969/announce',
+                  'udp://www.torrent.eu.org:451/announce',
+                  'udp://bt.bontal.net:6969/announce',
+                  'http://open.trackerlist.xyz:80/announce',
+                  'udp://tracker.gigantino.net:6969/announce',
+                  'http://0123456789nonexistent.com:80/announce',
+                  'udp://opentracker.io:6969/announce',
+                  'http://torrent.hificode.in:6969/announce',
+                  'udp://tracker.therarbg.to:6969/announce',
+                  'udp://1c.premierzal.ru:6969/announce',
+                  'udp://tracker.cloudbase.store:1333/announce',
+                  'http://shubt.net:2710/announce',
+                  'udp://tracker.zupix.online:1333/announce',
+                  'udp://tracker.rescuecrew7.com:1337/announce',
+                  'udp://tracker.startwork.cv:1337/announce',
+                  'udp://tracker.skillindia.site:6969/announce',
+                  'udp://tracker.hifitechindia.com:6969/announce',
+                  'udp://tracker.bitcoinindia.space:6969/announce',
+                  'udp://ttk2.nbaonlineservice.com:6969/announce',
+                  'https://tracker.zhuqiy.top:443/announce',
+                  'https://2.tracker.eu.org:443/announce',
+                  'udp://tracker.hifimarket.in:2710/announce',
+                  'https://4.tracker.eu.org:443/announce',
+                  'https://3.tracker.eu.org:443/announce',
+                  'udp://tr4ck3r.duckdns.org:6969/announce',
+                  'https://shahidrazi.online:443/announce',
+                  'udp://6ahddutb1ucc3cp.ru:6969/announce',
+                  'udp://public.popcorn-tracker.org:6969/announce',
+                  'http://104.28.1.30:8080/announce',
+                  'http://104.28.16.69/announce',
+                  'http://107.150.14.110:6969/announce',
+                  'http://109.121.134.121:1337/announce',
+                  'http://114.55.113.60:6969/announce',
+                  'http://125.227.35.196:6969/announce',
+                  'http://128.199.70.66:5944/announce',
+                  'http://157.7.202.64:8080/announce',
+                  'http://158.69.146.212:7777/announce',
+                  'http://173.254.204.71:1096/announce',
+                  'http://178.175.143.27/announce',
+                  'http://178.33.73.26:2710/announce',
+                  'http://182.176.139.129:6969/announce',
+                  'http://185.5.97.139:8089/announce',
+                  'http://188.165.253.109:1337/announce',
+                  'http://194.106.216.222/announce',
+                  'http://195.123.209.37:1337/announce',
+                  'http://210.244.71.25:6969/announce',
+                  'http://210.244.71.26:6969/announce',
+                  'http://213.159.215.198:6970/announce',
+                  'http://213.163.67.56:1337/announce',
+                  'http://37.19.5.139:6969/announce',
+                  'http://37.19.5.155:6881/announce',
+                  'http://46.4.109.148:6969/announce',
+                  'http://5.79.249.77:6969/announce',
+                  'http://5.79.83.193:2710/announce',
+                  'http://51.254.244.161:6969/announce',
+                  'http://59.36.96.77:6969/announce',
+                  'http://74.82.52.209:6969/announce',
+                  'http://80.246.243.18:6969/announce',
+                  'http://81.200.2.231/announce',
+                  'http://85.17.19.180/announce',
+                  'http://87.248.186.252:8080/announce',
+                  'http://87.253.152.137/announce',
+                  'http://91.216.110.47/announce',
+                  'http://91.217.91.21:3218/announce',
+                  'http://91.218.230.81:6969/announce',
+                  'http://93.92.64.5/announce',
+                  'http://atrack.pow7.com/announce',
+                  'http://bt.henbt.com:2710/announce',
+                  'http://bt.pusacg.org:8080/announce',
+                  'http://bt2.careland.com.cn:6969/announce',
+                  'http://explodie.org:6969/announce',
+                  'http://mgtracker.org:2710/announce',
+                  'http://mgtracker.org:6969/announce',
+                  'http://open.acgtracker.com:1096/announce',
+                  'http://open.lolicon.eu:7777/announce',
+                  'http://open.touki.ru/announce.php',
+                  'http://p4p.arenabg.ch:1337/announce',
+                  'http://p4p.arenabg.com:1337/announce',
+                  'http://pow7.com:80/announce',
+                  'http://retracker.gorcomnet.ru/announce',
+                  'http://retracker.krs-ix.ru/announce',
+                  'http://retracker.krs-ix.ru:80/announce',
+                  'http://secure.pow7.com/announce',
+                  'http://t1.pow7.com/announce',
+                  'http://t2.pow7.com/announce',
+                  'http://thetracker.org:80/announce',
+                  'http://torrent.gresille.org/announce',
+                  'http://torrentsmd.com:8080/announce',
+                  'http://tracker.aletorrenty.pl:2710/announce',
+                  'http://tracker.baravik.org:6970/announce',
+                  'http://tracker.bittor.pw:1337/announce',
+                  'http://tracker.bittorrent.am/announce',
+                  'http://tracker.calculate.ru:6969/announce',
+                  'http://tracker.dler.org:6969/announce',
+                  'http://tracker.dutchtracking.com/announce',
+                  'http://tracker.dutchtracking.com:80/announce',
+                  'http://tracker.dutchtracking.nl/announce',
+                  'http://tracker.dutchtracking.nl:80/announce',
+                  'http://tracker.edoardocolombo.eu:6969/announce',
+                  'http://tracker.ex.ua/announce',
+                  'http://tracker.ex.ua:80/announce',
+                  'http://tracker.filetracker.pl:8089/announce',
+                  'http://tracker.flashtorrents.org:6969/announce',
+                  'http://tracker.grepler.com:6969/announce',
+                  'http://tracker.internetwarriors.net:1337/announce',
+                  'http://tracker.kicks-ass.net/announce',
+                  'http://tracker.kicks-ass.net:80/announce',
+                  'http://tracker.kuroy.me:5944/announce',
+                  'http://tracker.mg64.net:6881/announce',
+                  'http://tracker.opentrackr.org:1337/announce',
+                  'http://tracker.skyts.net:6969/announce',
+                  'http://tracker.tfile.me/announce',
+                  'http://tracker.tiny-vps.com:6969/announce',
+                  'http://tracker.tvunderground.org.ru:3218/announce',
+                  'http://tracker.yoshi210.com:6969/announce',
+                  'http://tracker1.wasabii.com.tw:6969/announce',
+                  'http://tracker2.itzmx.com:6961/announce',
+                  'http://tracker2.wasabii.com.tw:6969/announce',
+                  'http://www.wareztorrent.com/announce',
+                  'http://www.wareztorrent.com:80/announce',
+                  'https://104.28.17.69/announce',
+                  'https://www.wareztorrent.com/announce',
+                  'udp://107.150.14.110:6969/announce',
+                  'udp://109.121.134.121:1337/announce',
+                  'udp://114.55.113.60:6969/announce',
+                  'udp://128.199.70.66:5944/announce',
+                  'udp://151.80.120.114:2710/announce',
+                  'udp://168.235.67.63:6969/announce',
+                  'udp://178.33.73.26:2710/announce',
+                  'udp://182.176.139.129:6969/announce',
+                  'udp://185.5.97.139:8089/announce',
+                  'udp://185.86.149.205:1337/announce',
+                  'udp://188.165.253.109:1337/announce',
+                  'udp://191.101.229.236:1337/announce',
+                  'udp://194.106.216.222:80/announce',
+                  'udp://195.123.209.37:1337/announce',
+                  'udp://195.123.209.40:80/announce',
+                  'udp://208.67.16.113:8000/announce',
+                  'udp://213.163.67.56:1337/announce',
+                  'udp://37.19.5.155:2710/announce',
+                  'udp://46.4.109.148:6969/announce',
+                  'udp://5.79.249.77:6969/announce',
+                  'udp://5.79.83.193:6969/announce',
+                  'udp://51.254.244.161:6969/announce',
+                  'udp://62.138.0.158:6969/announce',
+                  'udp://62.212.85.66:2710/announce',
+                  'udp://74.82.52.209:6969/announce',
+                  'udp://85.17.19.180:80/announce',
+                  'udp://89.234.156.205:80/announce',
+                  'udp://9.rarbg.com:2710/announce',
+                  'udp://9.rarbg.me:2780/announce',
+                  'udp://9.rarbg.to:2730/announce',
+                  'udp://91.218.230.81:6969/announce',
+                  'udp://94.23.183.33:6969/announce',
+                  'udp://bt.xxx-tracker.com:2710/announce',
+                  'udp://eddie4.nl:6969/announce',
+                  'udp://explodie.org:6969/announce',
+                  'udp://mgtracker.org:2710/announce',
+                  'udp://open.stealth.si:80/announce',
+                  'udp://p4p.arenabg.com:1337/announce',
+                  'udp://shadowshq.eddie4.nl:6969/announce',
+                  'udp://shadowshq.yi.org:6969/announce',
+                  'udp://torrent.gresille.org:80/announce',
+                  'udp://tracker.aletorrenty.pl:2710/announce',
+                  'udp://tracker.bittor.pw:1337/announce',
+                  'udp://tracker.coppersurfer.tk:6969/announce',
+                  'udp://tracker.eddie4.nl:6969/announce',
+                  'udp://tracker.ex.ua:80/announce',
+                  'udp://tracker.filetracker.pl:8089/announce',
+                  'udp://tracker.flashtorrents.org:6969/announce',
+                  'udp://tracker.grepler.com:6969/announce',
+                  'udp://tracker.ilibr.org:80/announce',
+                  'udp://tracker.internetwarriors.net:1337/announce',
+                  'udp://tracker.kicks-ass.net:80/announce',
+                  'udp://tracker.kuroy.me:5944/announce',
+                  'udp://tracker.leechers-paradise.org:6969/announce',
+                  'udp://tracker.mg64.net:2710/announce',
+                  'udp://tracker.mg64.net:6969/announce',
+                  'udp://tracker.opentrackr.org:1337/announce',
+                  'udp://tracker.piratepublic.com:1337/announce',
+                  'udp://tracker.sktorrent.net:6969/announce',
+                  'udp://tracker.skyts.net:6969/announce',
+                  'udp://tracker.tiny-vps.com:6969/announce',
+                  'udp://tracker.yoshi210.com:6969/announce',
+                  'udp://tracker2.indowebster.com:6969/announce',
+                  'udp://tracker4.piratux.com:6969/announce',
+                  'udp://zer0day.ch:1337/announce',
+                  'udp://zer0day.to:1337/announce'
             ]
         }
     });
@@ -513,6 +882,14 @@ class EmbeddedPlayer {
     this.video.addEventListener("timeupdate", () => {
       this.updateProgressBar();
       this.updateTimeDisplays();
+      
+      // Send watch progress to server for caching (debounced)
+      if (this.currentMovie && this.currentMovie.magnet) {
+        const progress = this.video.currentTime / this.video.duration;
+        if (!isNaN(progress) && progress > 0) {
+          this.sendWatchProgressDebounced(progress);
+        }
+      }
     });
 
     this.video.addEventListener("loadedmetadata", () => {
@@ -986,6 +1363,241 @@ class EmbeddedPlayer {
     const sizes = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
+
+  // Buffer progress display
+  updateBufferProgress(percentage) {
+    const bufferProgress = document.getElementById("bufferProgress");
+    if (bufferProgress) {
+      bufferProgress.style.width = percentage + "%";
+      bufferProgress.style.display = percentage > 0 ? "block" : "none";
+    }
+    
+    // Update buffer text if element exists
+    const bufferText = document.getElementById("bufferText");
+    if (bufferText) {
+      bufferText.textContent = `Buffer: ${percentage.toFixed(1)}%`;
+    }
+  }
+
+  // Toast notification system
+  showToast(message, type = "info") {
+    // Remove existing toast
+    this.hideToast();
+    
+    const toast = document.createElement("div");
+    toast.id = "playerToast";
+    toast.className = `player-toast player-toast-${type}`;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.style.transform = "translateX(0)";
+    }, 100);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      this.hideToast();
+    }, 3000);
+  }
+
+  hideToast() {
+    const existingToast = document.getElementById("playerToast");
+    if (existingToast) {
+      existingToast.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        if (existingToast.parentNode) {
+          existingToast.parentNode.removeChild(existingToast);
+        }
+      }, 300);
+    }
+  }
+
+  // Enhanced preloading management
+  startAggressivePreloading() {
+    if (!this.video) return;
+    
+    console.log("🚀 Starting aggressive preloading...");
+    
+    // Force preload to auto
+    this.video.preload = "auto";
+    
+    // Monitor and maintain buffer without affecting playback
+    this.bufferMonitor = setInterval(() => {
+      try {
+        if (this.video && this.video.buffered && this.video.buffered.length > 0) {
+          const bufferedEnd = this.video.buffered.end(this.video.buffered.length - 1);
+          const currentTime = this.video.currentTime || 0;
+          const duration = this.video.duration || 0;
+          
+          // If buffer is less than 10 minutes ahead, trigger aggressive background preloading
+          if (bufferedEnd - currentTime < 600 && duration > 0) {
+            console.log("🔄 Buffer running low, triggering aggressive background preloading...");
+            this.triggerBackgroundPreloading();
+          }
+        }
+      } catch (error) {
+        console.warn('Buffer monitoring error:', error);
+      }
+    }, 30000); // Check every 30 seconds to reduce frequency
+  }
+
+  triggerBackgroundPreloading() {
+    if (!this.video || !this.video.duration) return;
+    
+    // Add cooldown to prevent excessive preloading
+    if (this.preloadCooldown) {
+      console.log("⏳ Preloading in cooldown, skipping...");
+      return;
+    }
+    
+    const currentTime = this.video.currentTime || 0;
+    const duration = this.video.duration || 0;
+    
+    // Only preload if we're not near the end
+    if (currentTime < duration - 60) {
+      // Set cooldown for 30 seconds
+      this.preloadCooldown = true;
+      setTimeout(() => {
+        this.preloadCooldown = false;
+      }, 30000);
+      
+      // Create multiple hidden video elements for aggressive preloading
+      this.createAggressiveBackgroundPreloader(currentTime, duration);
+    }
+  }
+
+  createAggressiveBackgroundPreloader(currentTime, duration) {
+    // Calculate 10% of the video duration for larger chunks
+    const tenPercentDuration = duration * 0.10;
+    const preloadChunks = 2; // Load 2 chunks of 10% each = 20% total
+    
+    console.log(`🚀 Starting aggressive preloading: ${Math.round(tenPercentDuration)}s per chunk (10% each)`);
+    
+    // Clean up any existing background videos first
+    this.cleanupBackgroundVideos();
+    
+    for (let i = 1; i <= preloadChunks; i++) {
+      const preloadTime = Math.min(currentTime + (tenPercentDuration * i), duration - 1);
+      
+      // Create a hidden video element for each chunk
+      const backgroundVideo = document.createElement('video');
+      backgroundVideo.className = 'background-preloader';
+      backgroundVideo.style.display = 'none';
+      backgroundVideo.style.position = 'absolute';
+      backgroundVideo.style.left = '-9999px';
+      backgroundVideo.style.top = '-9999px';
+      backgroundVideo.preload = 'auto';
+      backgroundVideo.muted = true;
+      backgroundVideo.volume = 0;
+      
+      // Use the same source as the main video
+      backgroundVideo.src = this.video.src;
+      
+      // Add to DOM temporarily
+      document.body.appendChild(backgroundVideo);
+      
+      backgroundVideo.addEventListener('loadedmetadata', () => {
+        backgroundVideo.currentTime = preloadTime;
+        
+        // Let it load for a longer time to ensure more data is cached
+        setTimeout(() => {
+          if (backgroundVideo.parentNode) {
+            backgroundVideo.parentNode.removeChild(backgroundVideo);
+          }
+          console.log(`✅ Background preloading chunk ${i} completed for position ${Math.round(preloadTime)}s (${Math.round((preloadTime/duration)*100)}%)`);
+        }, 15000); // 15 seconds per chunk for better caching
+      });
+      
+      backgroundVideo.addEventListener('error', () => {
+        if (backgroundVideo.parentNode) {
+          backgroundVideo.parentNode.removeChild(backgroundVideo);
+        }
+        console.warn(`❌ Background preloading chunk ${i} failed for position ${Math.round(preloadTime)}s`);
+      });
+      
+      // Stagger the start times to avoid overwhelming the server
+      setTimeout(() => {
+        if (backgroundVideo.parentNode) {
+          backgroundVideo.currentTime = preloadTime;
+        }
+      }, i * 2000); // Start each chunk 2 seconds apart
+    }
+  }
+
+  cleanupBackgroundVideos() {
+    // Remove any existing background preloader videos
+    const existingVideos = document.querySelectorAll('.background-preloader');
+    existingVideos.forEach(video => {
+      if (video.parentNode) {
+        video.parentNode.removeChild(video);
+      }
+    });
+  }
+
+  stopAggressivePreloading() {
+    if (this.bufferMonitor) {
+      clearInterval(this.bufferMonitor);
+      this.bufferMonitor = null;
+    }
+  }
+
+  // Send watch progress to server for persistent caching (debounced)
+  sendWatchProgressDebounced(progress) {
+    if (!this.currentMovie || !this.currentMovie.magnet) return;
+    
+    // Clear existing timeout
+    if (this.progressUpdateTimeout) {
+      clearTimeout(this.progressUpdateTimeout);
+    }
+    
+    // Set new timeout for debounced update
+    this.progressUpdateTimeout = setTimeout(async () => {
+      try {
+        const userToken = localStorage.getItem('userToken');
+        const response = await fetch('/api/torrent/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userToken}`
+          },
+          body: JSON.stringify({
+            magnetHash: this.currentMovie.magnet,
+            progress: progress
+          })
+        });
+        
+        if (response.ok) {
+          console.log(`📊 Watch progress sent: ${Math.round(progress * 100)}%`);
+        }
+      } catch (error) {
+        console.warn('Failed to send watch progress:', error);
+      }
+    }, 5000); // Send updates every 5 seconds instead of 2
+  }
+
+  // Legacy method for backward compatibility
+  async sendWatchProgress(progress) {
+    this.sendWatchProgressDebounced(progress);
   }
 }
 

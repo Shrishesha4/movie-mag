@@ -379,6 +379,19 @@ class MovieApp {
         const genreContainer = document.getElementById('genreFilter');
         if (!genreContainer) return;
 
+        // Add click event listener to the "All Movies" button
+        const allMoviesButton = document.querySelector('[data-genre="all"]');
+        if (allMoviesButton) {
+            // Remove any existing event listeners to prevent duplicates
+            const newButton = allMoviesButton.cloneNode(true);
+            allMoviesButton.parentNode.replaceChild(newButton, allMoviesButton);
+            
+            // Add click event listener to the new button
+            newButton.addEventListener('click', () => {
+                this.setActiveGenre('all');
+            });
+        }
+
         const sortedGenres = Array.from(this.genresCache).sort();
         
         // Clear existing genre buttons (except "All Movies")
