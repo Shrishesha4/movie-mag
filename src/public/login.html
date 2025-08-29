@@ -71,6 +71,55 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
+            .glass-morphism {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            input {
+                padding: 0.875rem;
+                font-size: 1rem;
+            }
+            
+            button {
+                padding: 0.875rem;
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 0.75rem;
+            }
+            
+            .glass-morphism {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            input {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            button {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>

@@ -537,8 +537,23 @@ class EmbeddedPlayer {
       this.showError("Video playback error: " + (e.message || "Unknown error"));
     });
 
-    // Click video to toggle play/pause or show controls
+    // Click video to toggle play/pause or show controls (disabled on mobile)
     this.video.addEventListener("click", () => {
+      // Disable tap to pause on mobile devices (including landscape)
+      const isMobile = window.innerWidth <= 768 || 
+                      window.innerHeight <= 768 || 
+                      ('ontouchstart' in window) || 
+                      (navigator.maxTouchPoints > 0);
+      
+      if (isMobile) {
+        // On mobile, only show/hide controls, don't toggle play/pause
+        if (!this.controlsVisible) {
+          this.showControls();
+        }
+        return;
+      }
+      
+      // Desktop behavior: toggle play/pause or show controls
       if (this.controlsVisible) {
         this.togglePlayPause();
       } else {

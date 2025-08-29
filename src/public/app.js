@@ -65,32 +65,22 @@ class MovieApp {
     }
     
     setupUserInterface() {
-        // Add user info to navbar if needed
+        // Update user welcome message if username is available
         if (this.username) {
-            const navbar = document.getElementById('navbar');
-            if (navbar) {
-                // Add user info or logout button
-                const userInfo = document.createElement('div');
-                userInfo.className = 'flex items-center space-x-4';
-                userInfo.innerHTML = `
-                    <span class="text-gray-300">Welcome, ${this.username}</span>
-                    <button id="logoutBtn" class="text-gray-400 hover:text-white transition-colors">
-                        Logout
-                    </button>
-                `;
-                
-                const searchSection = navbar.querySelector('.flex.items-center.space-x-4');
-                if (searchSection) {
-                    searchSection.appendChild(userInfo);
-                }
-                
-                // Add logout functionality
-                document.getElementById('logoutBtn').addEventListener('click', () => {
-                    localStorage.removeItem('userToken');
-                    localStorage.removeItem('username');
-                    window.location.href = '/login';
-                });
+            const userWelcome = document.getElementById('userWelcome');
+            if (userWelcome) {
+                userWelcome.textContent = `Welcome, ${this.username}`;
             }
+        }
+        
+        // Add logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('username');
+                window.location.href = '/login';
+            });
         }
     }
     

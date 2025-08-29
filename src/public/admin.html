@@ -82,6 +82,415 @@
             to { transform: scale(1); opacity: 1; }
         }
         
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            /* Fix top navbar alignment */
+            nav.fixed.top-0 {
+                padding: 0 1rem;
+            }
+            
+            nav .flex.justify-between.items-center {
+                align-items: center;
+                min-height: 4rem;
+            }
+            
+            nav .flex.items-center.space-x-3 {
+                gap: 0.75rem;
+            }
+            
+            nav .flex.items-center.space-x-4 {
+                gap: 1rem;
+            }
+            
+            nav .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            nav .text-sm {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            /* Mobile admin info section fixes */
+            #adminInfo {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.5rem;
+            }
+            
+            #adminInfo .text-right {
+                text-align: right;
+                line-height: 1.2;
+            }
+            
+            #adminInfo .text-sm {
+                font-size: 0.75rem;
+                margin-bottom: 0.125rem;
+            }
+            
+            #adminInfo .text-xs {
+                font-size: 0.625rem;
+            }
+            
+            #adminInfo .relative {
+                align-self: flex-end;
+            }
+            
+            #adminInfo .w-10.h-10 {
+                width: 2rem;
+                height: 2rem;
+            }
+            
+            #adminInfo .w-5.h-5 {
+                width: 1rem;
+                height: 1rem;
+            }
+            
+            .admin-nav {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .admin-nav button {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .movies-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 1rem;
+            }
+            
+            .movie-card {
+                aspect-ratio: 2/3;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-width: none;
+                margin: 1rem;
+                padding: 1rem;
+            }
+            
+            .modal-header {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .modal-actions button {
+                width: 100%;
+            }
+            
+            /* Mobile movie management fixes */
+            .movie-card-admin {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .movie-card-admin .flex.items-center.space-x-4 {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .movie-card-admin .flex.items-center.space-x-2 {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            
+            .movie-card-admin .min-w-0.flex-1 {
+                width: 100%;
+            }
+            
+            /* Mobile search bar fixes */
+            .flex.flex-col.md\\:flex-row.justify-between.items-start.md\\:items-center {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            
+            .flex.space-x-4 {
+                flex-direction: column;
+                gap: 0.75rem;
+                width: 100%;
+            }
+            
+            .relative {
+                width: 100%;
+            }
+            
+            .relative input {
+                width: 100%;
+                padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            }
+            
+            /* Mobile user management spacing */
+            #userManagementSection {
+                margin-top: 2rem;
+            }
+            
+            /* Mobile user stats grid */
+            .grid.grid-cols-1.md\\:grid-cols-4.gap-4 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .stat-card.rounded-xl.p-4 {
+                padding: 1rem;
+            }
+            
+            .stat-card .text-2xl {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card .w-10.h-10 {
+                width: 2rem;
+                height: 2rem;
+            }
+            
+            .stat-card .w-5.h-5 {
+                width: 1rem;
+                height: 1rem;
+            }
+            
+            /* Mobile movie poster fixes */
+            .movie-poster-fallback {
+                width: 60px !important;
+                height: 90px !important;
+                min-width: 60px;
+                min-height: 90px;
+                max-width: 60px;
+                max-height: 90px;
+                overflow: hidden;
+            }
+            
+            .movie-poster-fallback img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            
+            /* Mobile user card fixes */
+            .bg-gray-600.rounded-lg.p-4.flex.items-center.justify-between {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-2 {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 > div:last-child {
+                width: 100%;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 > div:last-child h4 {
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 > div:last-child p {
+                font-size: 0.875rem;
+                margin-bottom: 0.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .admin-container {
+                padding: 0.75rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .movies-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 0.75rem;
+            }
+            
+            .admin-nav button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .modal-content {
+                margin: 0.5rem;
+                padding: 0.75rem;
+            }
+            
+            /* Extra small mobile fixes */
+            .movie-card-admin {
+                padding: 0.75rem;
+                gap: 0.75rem;
+            }
+            
+            .movie-card-admin .flex.items-center.space-x-4 {
+                gap: 0.5rem;
+            }
+            
+            .movie-card-admin .flex.items-center.space-x-2 {
+                gap: 0.25rem;
+            }
+            
+            .movie-poster-fallback {
+                width: 50px !important;
+                height: 75px !important;
+                min-width: 50px;
+                min-height: 75px;
+                max-width: 50px;
+                max-height: 75px;
+            }
+            
+            .relative input {
+                padding: 0.5rem 0.5rem 0.5rem 2rem;
+                font-size: 0.875rem;
+            }
+            
+            /* Extra small mobile navbar fixes */
+            nav .text-2xl {
+                font-size: 1.125rem;
+            }
+            
+            nav .w-8.h-8 {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+            
+            nav .w-5.h-5 {
+                width: 1rem;
+                height: 1rem;
+            }
+            
+            /* Extra small mobile admin info fixes */
+            #adminInfo {
+                gap: 0.25rem;
+            }
+            
+            #adminInfo .text-sm {
+                font-size: 0.625rem;
+            }
+            
+            #adminInfo .text-xs {
+                font-size: 0.5rem;
+            }
+            
+            #adminInfo .w-10.h-10 {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+            
+            #adminInfo .w-5.h-5 {
+                width: 0.875rem;
+                height: 0.875rem;
+            }
+            
+            /* Mobile dropdown menu fixes */
+            #adminDropdown {
+                right: 0;
+                min-width: 8rem;
+                font-size: 0.875rem;
+            }
+            
+            #adminDropdown a,
+            #adminDropdown button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            /* Extra small mobile user card fixes */
+            .bg-gray-600.rounded-lg.p-4.flex.items-center.justify-between {
+                padding: 0.75rem;
+                gap: 0.75rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 {
+                gap: 0.5rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-2 {
+                gap: 0.25rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 > div:last-child h4 {
+                font-size: 0.875rem;
+            }
+            
+            .bg-gray-600.rounded-lg.p-4 .flex.items-center.space-x-4 > div:last-child p {
+                font-size: 0.75rem;
+            }
+            
+            /* Extra small mobile user stats fixes */
+            .grid.grid-cols-1.md\\:grid-cols-4.gap-4 {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .stat-card.rounded-xl.p-4 {
+                padding: 0.75rem;
+            }
+            
+            .stat-card .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .stat-card .text-sm {
+                font-size: 0.75rem;
+            }
+            
+            /* Extra small mobile dropdown fixes */
+            #adminDropdown {
+                min-width: 7rem;
+                font-size: 0.75rem;
+            }
+            
+            #adminDropdown a,
+            #adminDropdown button {
+                padding: 0.375rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+        
         .glass-morphism {
             backdrop-filter: blur(16px) saturate(180%);
             background-color: rgba(17, 25, 40, 0.3);
@@ -177,18 +586,18 @@
     <nav class="fixed top-0 w-full z-40 glass-morphism">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-netflix-red rounded-md flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                        </div>
-                        <div class="text-2xl font-bold text-netflix-red">MovieMag</div>
-                        <span class="text-sm bg-gray-700 px-2 py-1 rounded-full">Admin</span>
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-netflix-red rounded-md flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
                     </div>
+                    <div class="text-2xl font-bold text-netflix-red">MovieMag</div>
+                    <span class="text-sm bg-gray-700 px-2 py-1 rounded-full">Admin</span>
                 </div>
                 
+                <!-- Admin Info & Actions -->
                 <div id="adminInfo" class="flex items-center space-x-4 hidden">
                     <div class="text-right">
                         <div class="text-sm font-medium" id="adminUsername">Admin</div>
@@ -299,94 +708,6 @@
                 <div class="mb-8 slide-up">
                     <h1 class="text-4xl font-bold mb-2">Dashboard</h1>
                     <p class="text-gray-400">Manage your movie streaming platform</p>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="stat-card rounded-2xl p-6 fade-in">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Total Movies</p>
-                                <p class="text-3xl font-bold text-netflix-red" id="dashboardMovieCount">0</p>
-                            </div>
-                            <div class="w-12 h-12 bg-netflix-red bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-netflix-red" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-green-400">Active</span>
-                            <span class="text-gray-400 ml-2">collection</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.1s">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Unique Genres</p>
-                                <p class="text-3xl font-bold text-blue-400" id="dashboardGenreCount">0</p>
-                            </div>
-                            <div class="w-12 h-12 bg-blue-400 bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-blue-400">Categories</span>
-                            <span class="text-gray-400 ml-2">available</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.2s">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">This Week</p>
-                                <p class="text-3xl font-bold text-green-400" id="dashboardRecentCount">0</p>
-                            </div>
-                            <div class="w-12 h-12 bg-green-400 bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-green-400">New</span>
-                            <span class="text-gray-400 ml-2">additions</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card rounded-2xl p-6 fade-in" style="animation-delay: 0.3s">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-400 text-sm">Database</p>
-                                <p class="text-3xl font-bold text-yellow-400">Online</p>
-                            </div>
-                            <div class="w-12 h-12 bg-yellow-400 bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-yellow-400">Connected</span>
-                            <span class="text-gray-400 ml-2">and ready</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-gray-800 rounded-2xl p-6 scale-in">
-                        <h3 class="text-xl font-semibold mb-4">Movie Additions Over Time</h3>
-                        <canvas id="moviesChart" width="400" height="200"></canvas>
-                    </div>
-                    
-                    <div class="bg-gray-800 rounded-2xl p-6 scale-in" style="animation-delay: 0.1s">
-                        <h3 class="text-xl font-semibold mb-4">Genre Distribution</h3>
-                        <canvas id="genresChart" width="400" height="200"></canvas>
-                    </div>
                 </div>
 
                 <!-- Quick Actions -->
@@ -508,15 +829,15 @@
                 <div class="bg-gray-800 rounded-2xl p-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
                         <h3 class="text-xl font-semibold">Manage Movies</h3>
-                        <div class="flex space-x-4">
-                            <div class="relative">
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+                            <div class="relative w-full sm:w-auto">
                                 <input type="text" id="searchMovies" placeholder="Search movies..." 
-                                       class="pl-10 pr-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
+                                       class="w-full pl-10 pr-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red">
                                 <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-                            <button id="refreshMoviesBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">
+                            <button id="refreshMoviesBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors w-full sm:w-auto">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                                 </svg>
@@ -544,7 +865,7 @@
                 </div>
                 
                 <!-- User Management Section -->
-                <div id="userManagementSection" class="bg-gray-800 rounded-2xl p-6 mb-8 hidden">
+                <div id="userManagementSection" class="bg-gray-800 rounded-2xl p-6 mb-8 hidden mt-8">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-semibold">User Management</h3>
                         <button onclick="hideUserManagement()" class="text-gray-400 hover:text-white">
@@ -634,7 +955,7 @@
                             </div>
                             <div class="md:col-span-3">
                                 <button type="submit" id="addUserBtn"
-                                        class="px-6 py-3 bg-netflix-red hover:bg-red-700 rounded-lg transition-colors">
+                                        class="w-full md:w-auto px-6 py-3 bg-netflix-red hover:bg-red-700 rounded-lg transition-colors">
                                     Add User
                                 </button>
                             </div>
@@ -1237,7 +1558,6 @@
             async loadDashboardData() {
                 await this.loadMovies();
                 this.updateDashboardStats();
-                this.initializeCharts();
             }
 
             async loadMovies() {
@@ -1355,7 +1675,11 @@
                     this.movies = [];
                 }
                 
-                document.getElementById('dashboardMovieCount').textContent = this.movies.length;
+                // Update movie count if element exists
+                const movieCountElement = document.getElementById('dashboardMovieCount');
+                if (movieCountElement) {
+                    movieCountElement.textContent = this.movies.length;
+                }
                 
                 const uniqueGenres = new Set();
                 this.movies.forEach(movie => {
@@ -1363,112 +1687,25 @@
                         movie.genre.split(',').forEach(g => uniqueGenres.add(g.trim().toLowerCase()));
                     }
                 });
-                document.getElementById('dashboardGenreCount').textContent = uniqueGenres.size;
+                
+                // Update genre count if element exists
+                const genreCountElement = document.getElementById('dashboardGenreCount');
+                if (genreCountElement) {
+                    genreCountElement.textContent = uniqueGenres.size;
+                }
                 
                 const oneWeekAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 const recentMovies = this.movies.filter(m => new Date(m.created_at) > oneWeekAgo);
-                document.getElementById('dashboardRecentCount').textContent = recentMovies.length;
-            }
-
-            initializeCharts() {
-                this.createMoviesChart();
-                this.createGenresChart();
-            }
-
-            createMoviesChart() {
-                const ctx = document.getElementById('moviesChart').getContext('2d');
-                ctx.canvas.style.maxHeight = '200px';
-                ctx.canvas.style.height = '200px';
                 
-                const labels = [];
-                const data = [];
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                    data.push(Math.floor(Math.random() * 5) + 1);
+                // Update recent count if element exists
+                const recentCountElement = document.getElementById('dashboardRecentCount');
+                if (recentCountElement) {
+                    recentCountElement.textContent = recentMovies.length;
                 }
-                
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Movies Added',
-                            data: data,
-                            borderColor: '#E50914',
-                            backgroundColor: 'rgba(229, 9, 20, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#9CA3AF' }
-                            },
-                            x: {
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                ticks: { color: '#9CA3AF' }
-                            }
-                        }
-                    }
-                });
             }
 
-            createGenresChart() {
-                const ctx = document.getElementById('genresChart').getContext('2d');
-                ctx.canvas.style.maxHeight = '200px';
-                ctx.canvas.style.height = '200px';
 
-                const genreCounts = {};
-                this.movies.forEach(movie => {
-                    if (movie.genre) {
-                        movie.genre.split(',').forEach(g => {
-                            const genre = g.trim();
-                            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-                        });
-                    }
-                });
-                
-                const sortedGenres = Object.entries(genreCounts)
-                    .sort(([,a], [,b]) => b - a)
-                    .slice(0, 5);
-                
-                const labels = sortedGenres.map(([genre]) => genre);
-                const data = sortedGenres.map(([,count]) => count);
-                const colors = ['#E50914', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
-                
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colors,
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { color: '#9CA3AF' }
-                            }
-                        }
-                    }
-                });
-            }
 
             async deleteMovie(id, title) {
                 if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
