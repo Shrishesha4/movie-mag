@@ -108,21 +108,38 @@ CREATE INDEX IF NOT EXISTS idx_torrent_cache_hash ON torrent_cache(info_hash);
 `;
 
 async function init() {
-  try {
-    const client = await pool.connect();
-    console.log('✅ Connected to PostgreSQL');
-    
-    // Initialize database schema
-    await client.query(initSchema);
-    console.log('✅ Database schema initialized');
-    
-    client.release();
-    
-    await redisClient.connect();
-    console.log('✅ Connected to Redis');
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    throw error;
+  const maxRetries = 10;
+  const retryDelay = 5000; // 5 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Attempting database connection (${attempt}/${maxRetries})...`);
+      
+      const client = await pool.connect();
+      console.log('✅ Connected to PostgreSQL');
+      
+      // Initialize database schema
+      await client.query(initSchema);
+      console.log('✅ Database schema initialized');
+      
+      client.release();
+      
+      await redisClient.connect();
+      console.log('✅ Connected to Redis');
+      
+      return; // Success, exit the retry loop
+      
+    } catch (error) {
+      console.error(`❌ Database connection attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        console.error('❌ Max retries reached. Database connection failed.');
+        throw error;
+      }
+      
+      console.log(`⏳ Retrying in ${retryDelay/1000} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
 }
 

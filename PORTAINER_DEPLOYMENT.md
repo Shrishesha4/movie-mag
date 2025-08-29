@@ -117,6 +117,12 @@ This guide explains how to deploy the Movie Streamer application using Portainer
    - Database schema is initialized programmatically
    - All static files are copied into the container during build
 
+5. **Database Authentication Errors**
+   - Ensure `DB_PASSWORD` environment variable is set correctly
+   - The application will retry database connections automatically
+   - Check that PostgreSQL container is healthy before application starts
+   - Verify environment variables are consistent between containers
+
 ### Checking Logs
 
 ```bash

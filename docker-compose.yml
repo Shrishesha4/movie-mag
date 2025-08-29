@@ -19,8 +19,10 @@ services:
       - DB_USER=${DB_USER:-movieuser}
       - DB_PASSWORD=${DB_PASSWORD:-moviepass}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - movie_data:/app/data
     restart: unless-stopped
@@ -46,6 +48,12 @@ services:
       - movie-network
     labels:
       - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-movieuser} -d ${DB_NAME:-moviedb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -58,6 +66,12 @@ services:
       - movie-network
     labels:
       - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:
