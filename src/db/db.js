@@ -115,6 +115,8 @@ async function init() {
     try {
       console.log(`🔄 Attempting database connection (${attempt}/${maxRetries})...`);
       
+
+      
       const client = await pool.connect();
       console.log('✅ Connected to PostgreSQL');
       

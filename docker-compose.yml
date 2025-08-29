@@ -41,6 +41,7 @@ services:
       - POSTGRES_DB=${DB_NAME:-moviedb}
       - POSTGRES_USER=${DB_USER:-movieuser}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-moviepass}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

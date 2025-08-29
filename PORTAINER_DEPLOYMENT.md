@@ -122,6 +122,10 @@ This guide explains how to deploy the Movie Streamer application using Portainer
    - The application will retry database connections automatically
    - Check that PostgreSQL container is healthy before application starts
    - Verify environment variables are consistent between containers
+   - **If "role does not exist" error occurs**: The database volume contains old data
+     - Stop the stack: `docker-compose down`
+     - Remove the volume: `docker volume rm movie-streamer_postgres_data`
+     - Restart the stack: `docker-compose up -d`
 
 ### Checking Logs
 
